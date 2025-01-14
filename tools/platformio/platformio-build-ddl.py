@@ -1,6 +1,6 @@
 """
-HC32F460 DDL
-Device Driver Libraries for the HC32F460 series of microcontrollers
+HC32L110 DDL
+Device Driver Libraries for the HC32L110 series of microcontrollers
 """
 import os
 import sys
@@ -19,7 +19,7 @@ board = env.BoardConfig()
 is_debug_build = "debug" in env.GetBuildType()
 
 # ensure framework is installed correctly
-FRAMEWORK_DIR = platform.get_package_dir("framework-hc32f46x-ddl")
+FRAMEWORK_DIR = platform.get_package_dir("framework-hc32l1xx-ddl")
 DDL_DIR = join(FRAMEWORK_DIR, "cores", "ddl")
 assert isdir(FRAMEWORK_DIR)
 assert isdir(DDL_DIR)
@@ -78,7 +78,7 @@ def get_ld_args() -> dict:
 
     # get parameters from board manifest
     flash_start = board.get("upload.offset_address", 0)
-    flash_size = board.get("upload.maximum_size", 262144)
+    flash_size = board.get("upload.maximum_size", 16384)
     boot_mode = board.get("build.boot_mode", "primary")
 
     # parse flash start (hex, convert to int)
@@ -126,7 +126,7 @@ def preprocess_ld_script():
 
     # get linker script source
     # either from the board manifest, or the default one
-    ld_script_source = board.get("build.ldscript", join(FRAMEWORK_DIR, "ld", "hc32f46x_param.ld"))
+    ld_script_source = board.get("build.ldscript", join(FRAMEWORK_DIR, "ld", "hc32l1xx_param.ld"))
 
     # allow disabling preprocessing using board_build.ld_preprocess
     if board.get("build.ld_preprocess", "true") == "true":
@@ -244,7 +244,7 @@ env.Append(
 
     # c/c++ defines
     CPPDEFINES=[
-        "HC32F460",
+        "HC32L110",
         "USE_DEVICE_DRIVER_LIB",
         "__TARGET_FPU_VFP",
 	    "__FPU_PRESENT=1",
