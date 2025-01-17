@@ -1,28 +1,28 @@
 /*******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -45,30 +45,61 @@
  ** System clock initialization.
  ** @link SampleGroup Some description @endlink
  **
- **   - 2017-10-27  1.0  Lux First version.
+ **   - 2016-02-16  1.0  QianCP First version for Device Driver Library of Module.
  **
  ******************************************************************************/
 
 /******************************************************************************/
 /* Include files                                                              */
 /******************************************************************************/
+#include "base_types.h"
+#include "hc32l110.h"
 #include "system_hc32l110.h"
-
-#define M0P_CLOCK_RCH                               (*((volatile uint32_t*)(0x4000200Cul)))
-#define CLOCK_RCH_Mask                              (0x0000007FFul)
+#include "ddl.h"
 
 /**
  ******************************************************************************
  ** System Clock Frequency (Core Clock) Variable according CMSIS
  ******************************************************************************/
-uint32_t SystemCoreClock;
+uint32_t SystemCoreClock = 4000000;
 
 
 //add clock source.
 void SystemCoreClockUpdate (void) // Update SystemCoreClock variable
 {
-    SystemCoreClock = 4000000;
+    SystemCoreClock = Clk_GetHClkFreq();
 }
+
+
+/**
+ ******************************************************************************
+ ** \brief  对MCU未引出IO端口进行默认配置.
+ **
+ ** \param  none
+ ** \return none
+ ******************************************************************************/
+static void _HidePinInit(void)
+{
+#if !defined(HC32L110Cxxx)       //20PIN MCU	
+    uint32_t tmpReg = M0P_CLOCK->PERI_CLKEN;
+	
+	M0P_CLOCK->PERI_CLKEN_f.GPIO = 1;
+    
+  #if defined(HC32L110Bxxx)	     //16PIN MCU
+    M0P_GPIO->P0ADS &= 0x07;     ///< P03配置为数字端口
+	M0P_GPIO->P3ADS &= 0xE3;     ///< P32/P33/P34配置为数字端口
+	
+    M0P_GPIO->P0DIR	|= 0xF8;     ///< P03配置为端口输入
+    M0P_GPIO->P3DIR	|= 0x1C;     ///< P32/P33/P34配置为端口输入
+	
+	M0P_GPIO->P0PU  |= 0xF8;     ///< P03配置为上拉
+	M0P_GPIO->P3PU  |= 0x1C;     ///< P32/P33/P34配置为上拉
+    
+  #endif
+	  M0P_CLOCK->PERI_CLKEN = tmpReg;
+#endif
+}
+
 
 /**
  ******************************************************************************
@@ -80,12 +111,21 @@ void SystemCoreClockUpdate (void) // Update SystemCoreClock variable
  ******************************************************************************/
 void SystemInit(void)
 {
-    // TODO load trim from flash
-    //hcr 4MHz manual trim.
-    M0P_CLOCK_RCH = (*((volatile uint16_t*) (0x00100C08ul)));    //Loader 4MHz Trimming value                                            
-    
-    SystemCoreClockUpdate();
+    stc_clk_systickcfg_t stcCfg;
 
+    // TODO load trim from flash and enable RCH
+    //hcr 4MHz manual trim.
+    Clk_SetRCHFreq(ClkFreq4Mhz);
+    Clk_Enable(ClkRCH, TRUE);    
+                                                
+    SystemCoreClockUpdate();
+	  
+	_HidePinInit();
+
+    DDL_ZERO_STRUCT(stcCfg);
+    stcCfg.bNoRef = TRUE;
+    stcCfg.u32LoadVal = 0xFFFFFF;
+    Clk_SysTickConfig(&stcCfg);
 }
 
 
