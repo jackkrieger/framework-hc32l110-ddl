@@ -1,28 +1,28 @@
 /*******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -76,18 +76,14 @@ extern "C"
 #define DEC2BCD(x)                  ((((x)/10)<<4) + ((x)%10))
 #define BCD2DEC(x)                  ((((x)>>4)*10) + ((x)&0x0F))
 
-#define WRITE_BIT(addr,offset,flag)    {   if( (flag) > 0u){\
+#define setBit(addr,offset,flag)    {   if( (flag) > 0u){\
                                             *((volatile uint32_t *)(addr)) |= ((1UL)<<(offset));\
                                         }else{\
                                             *((volatile uint32_t *)(addr)) &= (~(1UL<<(offset)));\
                                         }\
                                     }
 
-#define READ_BIT(addr,offset)         ((((*((volatile uint32_t *)(addr))) >> (offset)) & 1u)>0?1u:0)
-
-#define SET_BIT(REG, BIT)           ((REG) |= (BIT))
-#define CLEAR_BIT(REG, BIT)         ((REG) &= ~(BIT))
-#define GET_BIT(REG, BIT)           ((REG) & (BIT))
+#define getBit(addr,offset)         ((((*((volatile uint32_t *)(addr))) >> (offset)) & 1u)>0?1u:0)
 
 /**
  ******************************************************************************
@@ -115,6 +111,24 @@ extern "C"
  ** \brief IRQ name definition for all type MCUs
  ******************************************************************************/
     
+    #define PORT0_IRQHandler(void)              IRQ000_Handler(void)
+    #define PORT1_IRQHandler(void)              IRQ001_Handler(void)
+    #define PORT2_IRQHandler(void)              IRQ002_Handler(void)
+    #define PORT3_IRQHandler(void)              IRQ003_Handler(void)
+//                                              IRQ004_Handler(void)
+//                                              IRQ005_Handler(void)
+    #define UART0_IRQHandler(void)              IRQ006_Handler(void)
+    #define UART1_IRQHandler(void)              IRQ007_Handler(void)
+    #define LPUART_IRQHandler(void)             IRQ008_Handler(void)
+//                                              IRQ009_Handler(void)
+    #define SPI_IRQHandler(void)                IRQ010_Handler(void)
+//                                              IRQ011_Handler(void)
+    #define I2C_IRQHandler(void)                IRQ012_Handler(void)
+//                                              IRQ013_Handler(void)
+    #define TIM0_IRQHandler(void)               IRQ014_Handler(void)
+    #define TIM1_IRQHandler(void)               IRQ015_Handler(void)
+    #define TIM2_IRQHandler(void)               IRQ016_Handler(void)
+    #define LPTIM_IRQHandler(void)              IRQ017_Handler(void)
     #define TIM4_IRQHandler(void)               IRQ018_Handler(void)
     #define TIM5_IRQHandler(void)               IRQ019_Handler(void)
     #define TIM6_IRQHandler(void)               IRQ020_Handler(void)
@@ -158,6 +172,13 @@ typedef enum en_flag
     DdlClr = 0u,       ///< Flag clr '0'
     DdlSet = 1u        ///< Flag set '1'
 } en_stat_flag_t, en_irq_flag_t;
+/******************************************************************************/
+/* Global variable declarations ('extern', definition in C source)            */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Global function prototypes ('extern', definition in C source)              */
+/******************************************************************************/
 
 /*******************************************************************************
  * Global function prototypes
@@ -170,11 +191,18 @@ uint32_t Log2(uint32_t u32Val);
  ******************************************************************************/
 extern void DDL_WAIT_LOOP_HOOK(void);
 
+void Debug_UartInit(void);
+void Debug_Output(uint8_t u8Data);
+
 void delay1ms(uint32_t u32Cnt);
-
-
+void delay100us(uint32_t u32Cnt);
 #ifdef __cplusplus
 }
 #endif
 
 #endif /* __DDL_H__ */
+
+/******************************************************************************/
+/* EOF (not truncated)                                                        */
+/******************************************************************************/
+

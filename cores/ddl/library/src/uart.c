@@ -1,28 +1,28 @@
 /*************************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.    
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.    
 *
 * This software is owned and published by: 
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND 
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC 
-* components. This software is licensed by HDSC to be adapted only 
-* for use in systems utilizing HDSC components. HDSC shall not be 
+* This software contains source code for use with XHSC 
+* components. This software is licensed by XHSC to be adapted only 
+* for use in systems utilizing XHSC components. XHSC shall not be 
 * responsible for misuse or illegal use of this software for devices not 
-* supported herein. HDSC is providing this software "AS IS" and will 
+* supported herein. XHSC is providing this software "AS IS" and will 
 * not be responsible for issues arising from incorrect user implementation 
 * of the software.  
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS), 
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING, 
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED 
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED 
 * WARRANTY OF NONINFRINGEMENT.  
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT, 
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT, 
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT 
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, 
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR 
@@ -53,7 +53,6 @@
 /* Include files                                                              */
 /******************************************************************************/
 #include "uart.h"
-#include "base_timer.h"
 /**
  ******************************************************************************
  ** \addtogroup UartGroup
@@ -123,7 +122,75 @@ static stc_uart_instance_data_t* UartGetInternDataPtr(uint8_t u8Idx)
 
     return (pstcData);
 }
+/**
+ ******************************************************************************
+ ** \brief  UART通信中断使能函数设置
+ **
+ ** \param [in] u8Idx通道号，enIrqSel发送or接收中断使能
+ **
+ ** \retval OK配置成功
+ **\retval ErrorInvalidParameter配置失败
+ ******************************************************************************/
+en_result_t Uart_EnableIrq(uint8_t u8Idx,
+                           en_uart_irq_sel_t enIrqSel)
+{
+    stc_uart_instance_data_t* pstcData = NULL;
+    ASSERT(IS_VALID_CH(u8Idx));
+    ASSERT(IS_VALID_IRQSEL(enIrqSel));
+    pstcData = UartGetInternDataPtr(u8Idx);
+    if (NULL == pstcData)
+    {
+        return ErrorInvalidParameter;
+    }
+    switch(enIrqSel)
+    {
+        case  UartTxIrq:
+            pstcData->pstcInstance->SCON_f.TIEN = 1u;
+            break;
+        case  UartRxIrq:
+            pstcData->pstcInstance->SCON_f.RIEN = 1u;
+            break;
+        default:
+            return (ErrorInvalidParameter);       
+    }
+    return Ok;
+}
+/**
+ ******************************************************************************
+ ** \brief  UART通信中断禁止函数设置
+ **
+ ** \param [in] u8Idx通道号，enIrqSel发送or接收中断禁止
+ **
+ ** \retval OK配置成功
+ **\retval ErrorInvalidParameter配置失败
+ ******************************************************************************/
+en_result_t Uart_DisableIrq(uint8_t u8Idx, 
+                            en_uart_irq_sel_t enIrqSel)
+{
+    stc_uart_instance_data_t *pstcData = NULL;
 
+    ASSERT(IS_VALID_CH(u8Idx));
+    ASSERT(IS_VALID_IRQSEL(enIrqSel));
+        
+    pstcData = UartGetInternDataPtr(u8Idx);
+    if (NULL == pstcData)
+    {
+        return ErrorInvalidParameter;
+    }
+    switch(enIrqSel)
+    {
+        case  UartTxIrq:
+            pstcData->pstcInstance->SCON_f.TIEN = 0u;
+            break;
+        case  UartRxIrq:
+            pstcData->pstcInstance->SCON_f.RIEN = 0u;
+            break;
+        default:
+            return (ErrorInvalidParameter);       
+    }
+    
+    return Ok;
+}
 /**
  ******************************************************************************
  ** \brief  UART通道4种模式配置
@@ -382,13 +449,14 @@ en_result_t Uart_SetSaddrEn(uint8_t u8Idx,uint8_t u8Addren)
 uint16_t Uart_SetBaudRate(uint8_t u8Idx,uint32_t u32pclk,stc_uart_baud_config_t* pstcBaud)
 {
     uint16_t u16tmload=0;
+    float32_t f_tmload = 0;
     stc_uart_instance_data_t *pstcData = NULL;
     ASSERT(IS_VALID_CH(u8Idx));
     pstcData = UartGetInternDataPtr(u8Idx);
     if ((NULL == pstcData)||(NULL == pstcBaud))
     {
         return 0;//test
-    }
+    } 
     pstcData->pstcInstance->SCON_f.DBAUD = pstcBaud->bDbaud;
     switch(pstcBaud->u8Mode)
     {
@@ -397,14 +465,35 @@ uint16_t Uart_SetBaudRate(uint8_t u8Idx,uint32_t u32pclk,stc_uart_baud_config_t*
             break;
         case UartMode1:
         case UartMode3:
-            u16tmload = 0x10000-((u32pclk*(pstcBaud->bDbaud+1))/(pstcBaud->u32Baud*32));//单双倍波特率，定时器配置
+            f_tmload = ((float32_t)(u32pclk*(pstcBaud->bDbaud+1))/(float32_t)(pstcBaud->u32Baud*32)) + 0.5;
+            u16tmload = 0x10000 -((uint16_t)f_tmload);            
             break;
         default:
             break; 
     }
     return u16tmload;
 }
-
+/**
+ ******************************************************************************
+ ** \brief  UART通道发送或接收使能设置
+ **
+ ** \param [in] u8Idx通道号，enFunc发送或接收
+ **
+ ** \retval OK配置成功
+ **\retval ErrorInvalidParameter配置失败
+ ******************************************************************************/
+en_result_t Uart_EnableFunc(uint8_t u8Idx, en_uart_func_t enFunc)
+{
+    stc_uart_instance_data_t *pstcData = NULL;
+    ASSERT(IS_VALID_CH(u8Idx));
+    pstcData = UartGetInternDataPtr(u8Idx);
+    if (NULL == pstcData)
+    {
+        return ErrorInvalidParameter;
+    } 
+    pstcData->pstcInstance->SCON_f.REN = enFunc;
+    return Ok;
+}
 /**
  ******************************************************************************
  ** \brief  UART通道通信状态获取
@@ -476,7 +565,84 @@ en_result_t Uart_ClrStatus(uint8_t u8Idx,en_uart_status_t enStatus)
     }
     return Ok;
 }
+/**
+ ******************************************************************************
+ ** \brief  UART通道发送数据函数,查询方式调用此函数，中断方式发送不适用
+ **
+ ** \param [in] u8Idx通道号，Data发送数据
+ **
+ ** \retval Ok发送成功
+ **\retval ErrorInvalidParameter发送失败
+ ******************************************************************************/
+en_result_t Uart_SendData(uint8_t u8Idx, uint8_t u8Data)
+{
+    stc_uart_instance_data_t *pstcData = NULL;
+    ASSERT(IS_VALID_CH(u8Idx));
+    pstcData = UartGetInternDataPtr(u8Idx);
+    if (NULL == pstcData)
+    {
+        return ErrorInvalidParameter;
+    }
+    Uart_ClrStatus(u8Idx,UartTxEmpty);   
+    pstcData->pstcInstance->SBUF =u8Data;
+    while(FALSE == Uart_GetStatus(u8Idx,UartTxEmpty))
+    {}
+    Uart_ClrStatus(u8Idx,UartTxEmpty);       
+    return Ok;
+}
 
+/**
+ ******************************************************************************
+ ** \brief  UART通道发送数据函数,查询方式调用此函数，中断方式发送不适用
+ **
+ ** \param [in] u8Idx通道号，Data发送数据
+ **
+ ** \retval @ref en_result_t
+ ******************************************************************************/
+en_result_t Uart_SendDataTimeOut(uint8_t u8Idx, uint8_t u8Data, uint32_t u32TimeOut)
+{
+    uint32_t u32Cnt = 0;
+    stc_uart_instance_data_t *pstcData = NULL;
+    
+    ASSERT(IS_VALID_CH(u8Idx));
+    pstcData = UartGetInternDataPtr(u8Idx);
+    if (NULL == pstcData)
+    {
+        return ErrorInvalidParameter;
+    }
+    Uart_ClrStatus(u8Idx,UartTxEmpty);   
+    pstcData->pstcInstance->SBUF =u8Data;
+    while(FALSE == Uart_GetStatus(u8Idx,UartTxEmpty))
+    {
+        if(u32Cnt > u32TimeOut)
+        {
+            return ErrorTimeout;
+        }
+        u32Cnt++;    
+    }
+    Uart_ClrStatus(u8Idx,UartTxEmpty);       
+    return Ok;
+}
+/**
+ ******************************************************************************
+ ** \brief  UART通道接收数据函数
+ **
+ ** \param [in] u8Idx通道号
+ **
+ ** \retval 接收数据
+ **\retval ErrorInvalidParameter接收失败
+ ******************************************************************************/
+uint8_t Uart_ReceiveData(uint8_t u8Idx)
+{
+    stc_uart_instance_data_t *pstcData = NULL;
+    ASSERT(IS_VALID_CH(u8Idx));
+    pstcData = UartGetInternDataPtr(u8Idx);
+    if (NULL == pstcData)
+    {
+        return ErrorInvalidParameter;
+    }
+    return (pstcData->pstcInstance->SBUF);
+}
 /**
  ******************************************************************************
  ** \brief  UART通道中断处理函数
@@ -486,64 +652,42 @@ en_result_t Uart_ClrStatus(uint8_t u8Idx,en_uart_status_t enStatus)
  ** \retval 无
  **
  ******************************************************************************/
-void UART0_IRQHandler(void)
+void Uart_IRQHandler(uint8_t u8Param)
 {
-    if (1 == M0P_UART0->ISR_f.FE)
+    stc_uart_instance_data_t *pstcData = NULL;
+    pstcData = UartGetInternDataPtr(u8Param);
+    if (NULL == pstcData)
     {
-        UART0_ClearFrameErrroStatus();
-        if(NULL != m_astcUartInstanceDataLut[0].stcUartInternIrqCb.pfnRxErrIrqCb)
-        {
-            m_astcUartInstanceDataLut[0].stcUartInternIrqCb.pfnRxErrIrqCb();
-        }
         return;
     }
-    if(1 == M0P_UART0->ISR_f.RI)
+    if(1 == pstcData->pstcInstance->ISR_f.FE)
     {
-        UART0_ClearRxReceivedStatus();
-        if(NULL != m_astcUartInstanceDataLut[0].stcUartInternIrqCb.pfnRxIrqCb)
+        
+        if(NULL != pstcData->stcUartInternIrqCb.pfnRxErrIrqCb)
         {
-            m_astcUartInstanceDataLut[0].stcUartInternIrqCb.pfnRxIrqCb();
+			Uart_ClrStatus(u8Param,UartRFRAMEError);
+            pstcData->stcUartInternIrqCb.pfnRxErrIrqCb();
+        }
+        return;//若奇偶校验出错则不进行后续数据处理
+    }
+    if(1 == pstcData->pstcInstance->ISR_f.RI)
+    {
+        if(NULL != pstcData->stcUartInternIrqCb.pfnRxIrqCb)
+        {
+			Uart_ClrStatus(u8Param,UartRxFull);
+            pstcData->stcUartInternIrqCb.pfnRxIrqCb();
         }
     }
-    if(1 == M0P_UART0->ISR_f.TI)
+    if(1 == pstcData->pstcInstance->ISR_f.TI)
     {
-        UART0_ClearTxSentStatus();
-        if(NULL != m_astcUartInstanceDataLut[0].stcUartInternIrqCb.pfnTxIrqCb)
+        
+        if(NULL != pstcData->stcUartInternIrqCb.pfnTxIrqCb)
         {
-            m_astcUartInstanceDataLut[0].stcUartInternIrqCb.pfnTxIrqCb();
+			Uart_ClrStatus(u8Param,UartTxEmpty);
+            pstcData->stcUartInternIrqCb.pfnTxIrqCb();
         }
     }
 }
-
-void UART1_IRQHandler(void)
-{
-    if (1 == M0P_UART1->ISR_f.FE)
-    {
-        UART1_ClearFrameErrroStatus();
-        if(NULL != m_astcUartInstanceDataLut[1].stcUartInternIrqCb.pfnRxErrIrqCb)
-        {
-            m_astcUartInstanceDataLut[1].stcUartInternIrqCb.pfnRxErrIrqCb();
-        }
-        return;
-    }
-    if(1 == M0P_UART1->ISR_f.RI)
-    {
-        UART1_ClearRxReceivedStatus();
-        if(NULL != m_astcUartInstanceDataLut[1].stcUartInternIrqCb.pfnRxIrqCb)
-        {
-            m_astcUartInstanceDataLut[1].stcUartInternIrqCb.pfnRxIrqCb();
-        }
-    }
-    if(1 == M0P_UART1->ISR_f.TI)
-    {
-        UART1_ClearTxSentStatus();
-        if(NULL != m_astcUartInstanceDataLut[1].stcUartInternIrqCb.pfnTxIrqCb)
-        {
-            m_astcUartInstanceDataLut[1].stcUartInternIrqCb.pfnTxIrqCb();
-        }
-    }
-}
-
 /**
  ******************************************************************************
  ** \brief  UART通道使能内核NVIC中断
@@ -582,6 +726,7 @@ static void UartDeInitNvic(uint8_t u8Idx)
     NVIC_ClearPendingIRQ(enIrqIndex);
     NVIC_SetPriority(enIrqIndex,DDL_IRQ_LEVEL_DEFAULT);
     NVIC_DisableIRQ(enIrqIndex);
+    
 }
 /**
  ******************************************************************************
@@ -592,7 +737,8 @@ static void UartDeInitNvic(uint8_t u8Idx)
  ** \retval OK配置成功
  **\retval ErrorInvalidParameter配置失败
  ******************************************************************************/
-en_result_t Uart_Init(uint8_t u8Idx, stc_uart_config_t* pstcConfig)
+en_result_t Uart_Init(uint8_t u8Idx, 
+                      stc_uart_config_t* pstcConfig)
 {
     en_result_t enRet = Error;
     stc_uart_instance_data_t *pstcData = NULL;
@@ -628,231 +774,5 @@ en_result_t Uart_Init(uint8_t u8Idx, stc_uart_config_t* pstcConfig)
     }
     enRet = Ok;
     return enRet;
-}
-
-void Uart0_Init(uint32_t baud)
-{
-    uint16_t period;
-    uint32_t pclk;
-
-    UART0_SetDoubleBaud(TRUE);
-    UART0_SetMode(UartMode1);
-    UART0_SetMultiModeOff();
-    UART0_EnableRxReceivedIrq();
-    UART0_ClearRxReceivedStatus();
-    UART0_ClearTxSentStatus();
-    UART0_EnableRx();
-
-    // Config timer as baudrate source
-    BASE_TIM0_SetFunction(BtTimer);
-    BASE_TIM0_SetMode(BtMode2);
-
-    // Set timer period
-    pclk = Clk_GetPClkFreq();
-    //period = (0x10000 - ((pclk * (1 + 1)) / baud / 32));
-    period = UARTx_CalculatePeriod(pclk, 1, baud);
-    BASE_TIM0_SetARR(period);
-    BASE_TIM0_SetCounter16(period);
-    // Start timer
-    BASE_TIM0_Run();
-}
-
-void Uart1_Init(uint32_t baud)
-{
-    uint16_t period;
-    uint32_t pclk;
-
-    UART1_SetDoubleBaud(TRUE);
-    UART1_SetMode(UartMode1);
-    UART1_SetMultiModeOff();
-    UART1_EnableRxReceivedIrq();
-    UART1_ClearRxReceivedStatus();
-    UART1_ClearTxSentStatus();
-    UART1_EnableRx();
-
-    // Config timer as baudrate source
-    BASE_TIM1_SetFunction(BtTimer);
-    BASE_TIM1_SetMode(BtMode2);
-
-    // Set timer period
-    pclk = Clk_GetPClkFreq();
-    //period = (0x10000 - ((pclk * (1 + 1)) / baud / 32));
-    period = UARTx_CalculatePeriod(pclk, 1, baud);
-    BASE_TIM1_SetARR(period);
-    BASE_TIM1_SetCounter16(period);
-    // Start timer
-    BASE_TIM1_Run();
-}
-
-void Uart0_TxRx_Init(uint32_t baud, func_ptr_t rxCallback)
-{
-    uint16_t period;
-    uint32_t pclk;
-    stc_uart_irq_cb_t stcUartIrqCb;
-
-    UART0_SetDoubleBaud(TRUE);
-    UART0_SetMode(UartMode1);
-    UART0_SetMultiModeOff();
-    stcUartIrqCb.pfnRxIrqCb = rxCallback;
-    stcUartIrqCb.pfnTxIrqCb = NULL;
-    stcUartIrqCb.pfnRxErrIrqCb = NULL;
-    Uart0_SetCallback(&stcUartIrqCb);
-    UART0_EnableRxReceivedIrq();
-    UART0_ClearRxReceivedStatus();
-    UART0_ClearTxSentStatus();
-    UART0_EnableRx();
-
-    // Config timer0 as baudrate source
-    BASE_TIM0_SetFunction(BtTimer);
-    BASE_TIM0_SetMode(BtMode2);
-    // Set timer period
-    pclk = Clk_GetPClkFreq();
-    period = UARTx_CalculatePeriod(pclk, 1, baud);
-    BASE_TIM0_SetARR(period);
-    BASE_TIM0_SetCounter16(period);
-    // Start timer
-    BASE_TIM0_Run();
-}
-
-void Uart1_TxRx_Init(uint32_t baud, func_ptr_t rxCallback)
-{
-    uint16_t period;
-    uint32_t pclk;
-    stc_uart_irq_cb_t stcUartIrqCb;
-
-    UART1_SetDoubleBaud(TRUE);
-    UART1_SetMode(UartMode1);
-    UART1_SetMultiModeOff();
-    stcUartIrqCb.pfnRxIrqCb = rxCallback;
-    stcUartIrqCb.pfnTxIrqCb = NULL;
-    stcUartIrqCb.pfnRxErrIrqCb = NULL;
-    Uart1_SetCallback(&stcUartIrqCb);
-    UART1_EnableRxReceivedIrq();
-    UART1_ClearRxReceivedStatus();
-    UART1_ClearTxSentStatus();
-    UART1_EnableRx();
-
-    // Config timer1 as baudrate source
-    BASE_TIM1_SetFunction(BtTimer);
-    BASE_TIM1_SetMode(BtMode2);
-    // Set timer period
-    pclk = Clk_GetPClkFreq();
-    period = UARTx_CalculatePeriod(pclk, 1, baud);
-    BASE_TIM1_SetARR(period);
-    BASE_TIM1_SetCounter16(period);
-    // Start timer
-    BASE_TIM1_Run();
-}
-
-static void Uart0_InitNvic(void)
-{
-    NVIC_ClearPendingIRQ(UART0_IRQn);
-    NVIC_SetPriority(UART0_IRQn,DDL_IRQ_LEVEL_DEFAULT);
-    NVIC_EnableIRQ(UART0_IRQn);
-}
-
-static void Uart1_InitNvic(void)
-{
-    NVIC_ClearPendingIRQ(UART1_IRQn);
-    NVIC_SetPriority(UART1_IRQn,DDL_IRQ_LEVEL_DEFAULT);
-    NVIC_EnableIRQ(UART1_IRQn);
-}
-
-void Uart0_SetCallback(stc_uart_irq_cb_t *callbacks)
-{
-    stc_uart_instance_data_t *pstcData = &m_astcUartInstanceDataLut[0];
-    pstcData->stcUartInternIrqCb.pfnRxErrIrqCb = callbacks->pfnRxErrIrqCb;
-    pstcData->stcUartInternIrqCb.pfnRxIrqCb = callbacks->pfnRxIrqCb;
-    pstcData->stcUartInternIrqCb.pfnTxIrqCb = callbacks->pfnTxIrqCb;
-    Uart0_InitNvic();
-}
-
-void Uart1_SetCallback(stc_uart_irq_cb_t *callbacks)
-{
-    stc_uart_instance_data_t *pstcData = &m_astcUartInstanceDataLut[1];
-    pstcData->stcUartInternIrqCb.pfnRxErrIrqCb = callbacks->pfnRxErrIrqCb;
-    pstcData->stcUartInternIrqCb.pfnRxIrqCb = callbacks->pfnRxIrqCb;
-    pstcData->stcUartInternIrqCb.pfnTxIrqCb = callbacks->pfnTxIrqCb;
-    Uart1_InitNvic();
-}
-
-en_result_t Uart0_TxChar(uint8_t u8Data)
-{
-    M0P_UART0->ICR_f.TICLR = 0;
-    M0P_UART0->SBUF = u8Data;
-
-    while (TRUE != M0P_UART0->ISR_f.TI);
-    M0P_UART0->ICR_f.TICLR = 0;
-    return Ok;
-}
-
-en_result_t Uart1_TxChar(uint8_t u8Data)
-{
-    M0P_UART1->ICR_f.TICLR = 0;
-    M0P_UART1->SBUF = u8Data;
-
-    while (TRUE != M0P_UART1->ISR_f.TI);
-    M0P_UART1->ICR_f.TICLR = 0;
-    return Ok;
-}
-
-extern uint8_t HEX_TABLE[16];
-
-void Uart0_TxHex8Bit(uint8_t hex)
-{
-    Uart0_TxChar(HEX_TABLE[hex >> 4 & 0xF]);
-    Uart0_TxChar(HEX_TABLE[hex & 0xF]);
-}
-
-void Uart1_TxHex8Bit(uint8_t hex)
-{
-    Uart1_TxChar(HEX_TABLE[hex >> 4 & 0xF]);
-    Uart1_TxChar(HEX_TABLE[hex & 0xF]);
-}
-
-void Uart0_TxHexArray(uint8_t *hex, uint8_t len)
-{
-    while (len--)
-    {
-        Uart0_TxChar(HEX_TABLE[*(hex + len) >> 4 & 0xF]);
-        Uart0_TxChar(HEX_TABLE[*(hex + len) & 0xF]);
-    }
-}
-
-void Uart0_TxHexArrayRevert(uint8_t *hex, uint8_t len)
-{
-    while (len--)
-    {
-        Uart0_TxChar(HEX_TABLE[*(hex + len) >> 4 & 0xF]);
-        Uart0_TxChar(HEX_TABLE[*(hex + len) & 0xF]);
-    }
-}
-
-void Uart1_TxHexArray(uint8_t *hex, uint8_t len)
-{
-    while (len--)
-    {
-        Uart1_TxChar(HEX_TABLE[*(hex) >> 4 & 0xF]);
-        Uart1_TxChar(HEX_TABLE[*(hex++) & 0xF]);
-    }
-}
-
-void Uart1_TxHexArrayRevert(uint8_t *hex, uint8_t len)
-{
-    while (len--)
-    {
-        Uart1_TxChar(HEX_TABLE[*(hex + len) >> 4 & 0xF]);
-        Uart1_TxChar(HEX_TABLE[*(hex + len) & 0xF]);
-    }
-}
-
-void Uart0_TxString(char *str)
-{
-    while (*str) Uart0_TxChar(*str++);
-}
-
-void Uart1_TxString(char *str)
-{
-    while (*str) Uart1_TxChar(*str++);
 }
 //@} // UartGroup      

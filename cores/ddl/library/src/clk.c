@@ -1,28 +1,28 @@
 /******************************************************************************
-*Copyright(C)2017, Huada Semiconductor Co.,Ltd All rights reserved.
+*Copyright(C)2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd("HDSC").
+* Xiaohua Semiconductor Co.,Ltd("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -94,6 +94,45 @@
  * Global variable definitions (declared in header file with 'extern')
  ******************************************************************************/
 extern uint32_t SystemCoreClock;
+/*******************************************************************************
+ * Local type definitions ('typedef')
+ ******************************************************************************/
+
+/*******************************************************************************
+ * Local variable definitions ('static')
+ ******************************************************************************/
+
+/*******************************************************************************
+ * Local function prototypes ('static')
+ ******************************************************************************/
+
+
+/*******************************************************************************
+ * Function implementation - global ('extern') and local ('static')
+ ******************************************************************************/
+
+/**
+ *******************************************************************************
+ ** \brief 时钟解锁
+ **
+ ** \retval 
+ ******************************************************************************/
+static void ClkUnlock(void)
+{
+    M0P_CLOCK->SYSCTRL2 = 0x5A5A;
+    M0P_CLOCK->SYSCTRL2 = 0xA5A5;
+}
+
+/**
+ *******************************************************************************
+ ** \brief 时钟SYSCTRL0寄存器空写 
+ **
+ ** \retval                                      
+ ******************************************************************************/
+static void ClkWriteDummy(void)
+{
+    M0P_CLOCK->SYSCTRL0_f.RESERVED11 = 0x0;
+}
 
 /**
  *******************************************************************************
@@ -107,7 +146,7 @@ en_result_t Clk_SetFunc(en_clk_func_t enFunc, boolean_t bFlag)
 {
     en_result_t enRet = Ok;
 
-    CLK_Unlock();
+    ClkUnlock();
     bFlag = !!bFlag;
 
     switch (enFunc)
@@ -140,7 +179,7 @@ en_result_t Clk_SetFunc(en_clk_func_t enFunc, boolean_t bFlag)
             M0P_CLOCK->SYSCTRL1_f.SWD_UIO = bFlag;
             break;
         default:
-            CLK_DummyWrite();
+            ClkWriteDummy();
             enRet = ErrorInvalidParameter;
             break;
     }
@@ -203,33 +242,33 @@ en_result_t Clk_SwitchTo(en_clk_source_t enSource)
     //close old
     Clk_Enable(ClkOld, FALSE);
 
-    // 如果当前时钟非外部高速（即不大于24MHz）则不增加读等待周期
+    //如果当前时钟非外部高速（即不大于24MHz）则不增加读等待周期
     if(ClkXTH != ClkNew)
     {
         M0P_FLASH->CR_f.WAIT = FALSE;
     }
-
+    
     SystemCoreClockUpdate();
-    // Update systick reload value
-    SysTick->LOAD  = SystemCoreClock / 1000 - 1UL;
 
     return Ok;
+
 }
 
 
 /**
  *******************************************************************************
- ** \brief Get System Clock(HCLK) Frequency
+ ** \brief 获得系统时钟（HCLK）频率值
  ** \param [in]     
- ** \retval      uint32_t         HCLK Frequency
+ ** \retval      uint32_t         HCLK频率值
  **
  ******************************************************************************/
 uint32_t Clk_GetHClkFreq(void)
 {
     uint32_t u32Val = 0;
     uint16_t u16TrimVal22_12 = 0;
-    const uint32_t u32lcr_tbl[] = {32768, 38400};
-    const uint32_t u32hcr_tbl[] = {4000000UL, 8000000UL, 16000000UL, 24000000UL};
+    const uint8_t u8hcr_tbl[] = { 4, 8, 16, 24 };
+    const uint32_t u32lcr_tbl[] = { 32768, 38400 };
+    
     en_clk_source_t enSrc;
 
     //1. get current input source
@@ -238,8 +277,9 @@ uint32_t Clk_GetHClkFreq(void)
     switch (enSrc)
     {
         case ClkRCH:
-            u32Val = u32hcr_tbl[(M0P_CLOCK->RCH_CR_f.TRIM & 0x600U) >> 9u];
-            if(24000000u == u32Val)
+            u32Val = u8hcr_tbl[(M0P_CLOCK->RCH_CR_f.TRIM&0x600U)>>9u];
+            u32Val *= 1000u * 1000u;
+			if(24000000u == u32Val)
 			{
                 u16TrimVal22_12 = RCH_CR_TRIM_22_12M_VAL;
 				if(u16TrimVal22_12 == M0P_CLOCK->RCH_CR_f.TRIM)
@@ -249,7 +289,7 @@ uint32_t Clk_GetHClkFreq(void)
 			}
             break;
         case ClkRCL:
-            u32Val = u32lcr_tbl[(M0P_CLOCK->RCL_CR_f.TRIM & 0x200U) >> 9u];
+            u32Val = u32lcr_tbl[(M0P_CLOCK->RCL_CR_f.TRIM&0x200U)>>9u];
             break;
         case ClkXTH:
             u32Val = CLK_XTH_VAL;
@@ -269,9 +309,9 @@ uint32_t Clk_GetHClkFreq(void)
 
 /**
  *******************************************************************************
- ** \brief Get Peripheral Clock (PCLK) Frequency
+ ** \brief 获得外设时钟（PCLK）频率值
  ** \param [in]     
- ** \retval      uint32_t         PCLK Frequency
+ ** \retval      uint32_t         PCLK频率值
  **
  ******************************************************************************/
 uint32_t Clk_GetPClkFreq(void)
@@ -284,32 +324,27 @@ uint32_t Clk_GetPClkFreq(void)
     return u32Val;
 }
 
+
 /**
- * @brief Switch clock speed and set hclk pclk divs
- * 
- * @param clkFreq 
- * @param hclkDiv 
- * @param pclkDiv 
- * @return en_result_t 
- */
-en_result_t Clk_Init(en_clk_freq_t clkFreq, en_clk_div_t hclkDiv, en_clk_div_t pclkDiv)
+ *******************************************************************************
+ ** \brief 时钟初始化函数
+ ** \param [in]  pstcCfg    初始化配置参数   
+ ** \retval      Ok         设定成功
+ **             其他        设定失败
+ ******************************************************************************/
+en_result_t Clk_Init(stc_clk_config_t *pstcCfg)
 {
-    ASSERT(hclkDiv <= ClkDiv128);
-    ASSERT(pclkDiv <= ClkDiv8);
-    /**
-     * Switch clock speed.
-     * - When power on, default clock source is internal high speed RC clock at 4MHz
-     * - Sugguested in User Manual
-     *   - option 1: change the frequency step by step without changing the clock source
-     *   - option 2: switch to low speed clock source, change the frequency, then switch back
-     */
-    Clk_SwitchTo(ClkRCL); // Switch to internal low speed clock source
-    Clk_SetRCHFreq(clkFreq);
-    Clk_SwitchTo(ClkRCH);
-    Clk_SetHClkDiv(hclkDiv);
-    Clk_SetPClkDiv(pclkDiv);
+    ASSERT(NULL != pstcCfg);
+    ASSERT(pstcCfg->enHClkDiv <= ClkDiv128);
+    ASSERT(pstcCfg->enPClkDiv <= ClkDiv8);
+
+    Clk_SwitchTo(pstcCfg->enClkSrc);
+    Clk_SetHClkDiv(pstcCfg->enHClkDiv);
+    Clk_SetPClkDiv(pstcCfg->enPClkDiv);
+
     return Ok;
 }
+
 
 /**
  *******************************************************************************
@@ -341,7 +376,7 @@ en_result_t Clk_SetSource(en_clk_source_t enSource)
 {
     en_result_t enRet = Ok;
 
-    CLK_Unlock();
+    ClkUnlock();
 
     switch (enSource)
     {
@@ -352,7 +387,7 @@ en_result_t Clk_SetSource(en_clk_source_t enSource)
             M0P_CLOCK->SYSCTRL0_f.CLK_SW4_SEL = enSource;
             break;
         default:
-            CLK_DummyWrite();
+            ClkWriteDummy();
             enRet = ErrorInvalidParameter;
             break;
     }
@@ -475,7 +510,7 @@ en_result_t Clk_SetHClkDiv(uint8_t u8Div)
         case ClkDiv32:
         case ClkDiv64:
         case ClkDiv128:
-            CLK_Unlock();
+            ClkUnlock();
             u8Div = Log2(u8Div);
             M0P_CLOCK->SYSCTRL0_f.HCLK_PRS = u8Div;
             break;
@@ -503,7 +538,7 @@ en_result_t Clk_SetPClkDiv(uint8_t u8Div)
         case ClkDiv2:
         case ClkDiv4:
         case ClkDiv8:
-            CLK_Unlock();
+            ClkUnlock();
             u8Div = Log2(u8Div);
             M0P_CLOCK->SYSCTRL0_f.PCLK_PRS = u8Div;
             break;
@@ -614,20 +649,40 @@ en_result_t Clk_SetXTL_StableTime(en_clk_cycle_t enCycle)
     return enRet;
 }
 
-
 /**
  *******************************************************************************
- ** \brief 外部低速时钟驱动能力设定
- ** \param [in]  bHigh      是否高驱动能力
+ ** \brief 外部低速晶振驱动配置
+ ** \param [in]  enFreq     外部低速晶振振荡幅度选择
+ ** \param [in]  enDriver   外部低速晶振驱动能力选择
  ** \retval      Ok         设定成功
  **             其他        设定失败
  ******************************************************************************/
-en_result_t Clk_SetXTLDrive(boolean_t  bHigh)
+en_result_t Clk_SetXTL_Driver(en_clk_xtl_amp_t enAmp, en_clk_xtl_driver_t enDriver)
 {
-    bHigh = !!bHigh;
-    M0P_CLOCK->XTL_CR_f.DRIVER = bHigh;
+    en_result_t enRet = Ok;
 
-    return Ok;
+    M0P_CLOCK->XTL_CR_f.DRIVER  = (enAmp<<2);
+    M0P_CLOCK->XTL_CR_f.DRIVER |= enDriver;
+
+    return enRet;
+}
+
+/**
+ *******************************************************************************
+ ** \brief 外部高速晶振驱动配置
+ ** \param [in]  enFreq     外部高速晶振频率范围选择
+ ** \param [in]  enDriver   外部高速晶振驱动能力选择
+ ** \retval      Ok         设定成功
+ **             其他        设定失败
+ ******************************************************************************/
+en_result_t Clk_SetXTH_Driver(en_clk_xth_freq_t enFreq, en_clk_xth_driver_t enDriver)
+{
+    en_result_t enRet = Ok;
+
+    M0P_CLOCK->XTH_CR_f.DRIVER  = (enFreq<<2);
+    M0P_CLOCK->XTH_CR_f.DRIVER |= enDriver;
+
+    return enRet;
 }
 
 /**
@@ -653,7 +708,7 @@ en_result_t Clk_Enable(en_clk_source_t enSource, boolean_t bFlag)
     en_result_t enRet = Ok;
     uint32_t u32Temp;
     
-    CLK_Unlock();
+    ClkUnlock();
     //force to 0/1
     bFlag = !!bFlag;
 
@@ -685,13 +740,33 @@ en_result_t Clk_Enable(en_clk_source_t enSource, boolean_t bFlag)
             break;
 
         default:
-            CLK_DummyWrite();
+            ClkWriteDummy();
             enRet = ErrorInvalidParameter;
             break;
     }
     M0P_CLOCK->PERI_CLKEN = u32Temp;
     return enRet;
 }
+
+
+/**
+ *******************************************************************************
+ ** \brief 设置外设时钟门控开关
+ ** \param [in]  enPeripheral   目标外设
+ ** \param [in]  bFlag      使能开关
+ ** \retval      Ok         设定成功
+ **             其他        设定失败
+ ******************************************************************************/
+en_result_t Clk_SetPeripheralGate(en_clk_peripheral_gate_t enPeripheral,
+                                  boolean_t bFlag)
+{
+    en_result_t enRet = Ok;
+
+    bFlag = !!bFlag;
+    setBit(&M0P_CLOCK->PERI_CLKEN, enPeripheral, bFlag);
+    return enRet;
+}
+
 
 /**
  *******************************************************************************
@@ -702,7 +777,7 @@ en_result_t Clk_Enable(en_clk_source_t enSource, boolean_t bFlag)
  ******************************************************************************/
 boolean_t Clk_GetPeripheralGate(en_clk_peripheral_gate_t enPeripheral)
 {
-    return READ_BIT(&M0P_CLOCK->PERI_CLKEN, enPeripheral);
+    return getBit(&M0P_CLOCK->PERI_CLKEN, enPeripheral);
 }
 
 
@@ -717,7 +792,7 @@ en_result_t Clk_SetRTCAdjustClkFreq(uint32_t u32val)
 {
     //en_result_t enRet = Ok;
 
-    CLK_Unlock();
+    ClkUnlock();
 
     if (u32val >= (32 * 1000 * 1000))
     {
@@ -745,7 +820,7 @@ en_result_t Clk_SetRTCAdjustClkFreq(uint32_t u32val)
         M0P_CLOCK->SYSCTRL1_f.RTC_FREQ_ADJUST = 0;
     } else
     {
-        CLK_DummyWrite();
+        ClkWriteDummy();
         return ErrorInvalidParameter;
     }
 
@@ -766,8 +841,8 @@ en_result_t Clk_SysTickConfig(stc_clk_systickcfg_t *pstcCfg)
         return ErrorInvalidParameter;
     }
 
-    M0P_CLOCK->PERI_CLKEN_f.TICK = 1;   // Enable peripheral clock on SysTick
-    switch (pstcCfg->enClk)             // Select clock source if using enClk
+    M0P_CLOCK->PERI_CLKEN_f.TICK = 1;
+    switch (pstcCfg->enClk)
     {
         case ClkRCH:
             M0P_CLOCK->SYSTICK_CR_f.CLK_SEL = 0x2;
@@ -787,11 +862,11 @@ en_result_t Clk_SysTickConfig(stc_clk_systickcfg_t *pstcCfg)
 
     M0P_CLOCK->SYSTICK_CR_f.NOREF = pstcCfg->bNoRef;
 
-    SysTick->LOAD  = (uint32_t)(pstcCfg->u32LoadVal - 1UL);          // set reload value
-    NVIC_SetPriority(SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL); // set Priority for SysTick Interrupt
-    SysTick->VAL   = 0UL;                                            // Reset counter value
-    SysTick->CTRL  = SysTick_CTRL_ENABLE_Msk; // Turn on SysTick without interrupt
-
+    SysTick->LOAD  = (uint32_t)(pstcCfg->u32LoadVal - 1UL);                         /* set reload register */
+    NVIC_SetPriority(SysTick_IRQn, (1UL << __NVIC_PRIO_BITS) - 1UL);                /* set Priority for Systick Interrupt */
+    SysTick->VAL   = 0UL;                                                           /* Load the SysTick Counter Value */
+    SysTick->CTRL  = SysTick_CTRL_ENABLE_Msk;
+    
     return Ok;
 }
 
@@ -840,7 +915,7 @@ en_result_t Clk_DebugClk(en_clk_debug_t enPeri, boolean_t bFlag)
         case ClkDBGTWdt:
         case ClkDBGTRtc:
         case ClkDBGTTick:
-            WRITE_BIT(&M0P_CLOCK->DEBUG_ACTIVE, 1 << enPeri, bFlag);
+            setBit(&M0P_CLOCK->DEBUG_ACTIVE, enPeri, bFlag);
             break;
         default:
             return ErrorInvalidParameter;

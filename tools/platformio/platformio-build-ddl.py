@@ -126,7 +126,7 @@ def preprocess_ld_script():
 
     # get linker script source
     # either from the board manifest, or the default one
-    ld_script_source = board.get("build.ldscript", join(FRAMEWORK_DIR, "ld", "hc32l1xx_param.ld"))
+    ld_script_source = board.get("build.ldscript", join(FRAMEWORK_DIR, "ld", "hc32l110.ld"))
 
     # allow disabling preprocessing using board_build.ld_preprocess
     if board.get("build.ld_preprocess", "true") == "true":

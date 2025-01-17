@@ -1,28 +1,28 @@
 /*******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -92,10 +92,10 @@ extern "C"
  ******************************************************************************/
 typedef enum en_clk_source
 {
-    ClkRCH  = 0u,               ///< Internal High Speed
-    ClkXTH  = 1u,               ///< External High Speed
-    ClkRCL  = 2u,               ///< Internal Low Speed
-    ClkXTL  = 3u,               ///< External Low Speed
+    ClkRCH  = 0u,               ///< 内部高速时钟
+    ClkXTH  = 1u,               ///< 外部高速时钟
+    ClkRCL  = 2u,               ///< 内部低速时钟
+    ClkXTL  = 3u,               ///< 外部低速时钟
 }en_clk_source_t;
 
 /**
@@ -131,7 +131,7 @@ typedef enum en_clk_cycle
 
 /**
  *******************************************************************************
- ** \brief Clock Frequencies
+ ** \brief 时钟频率值枚举
  ******************************************************************************/
 typedef enum en_clk_freq
 {
@@ -172,7 +172,7 @@ typedef enum en_clk_peripheral_gate
     ClkPeripheralLpUart     = 2u,       ///< 低功耗串口
     ClkPeripheralI2c        = 4u,       ///< I2C
     ClkPeripheralSpi        = 6u,       ///< SPI
-    ClkPeripheralBaseTim    = 8u,       ///< 基础时钟
+    ClkPeripheralBt         = 8u,       ///< 基础时钟
     ClkPeripheralLpTim      = 9u,       ///< 低功耗时钟
     ClkPeripheralAdt        = 10u,      ///< 高级时钟
     ClkPeripheralPca        = 14u,      ///< 可编程计数阵列
@@ -194,17 +194,17 @@ typedef enum en_clk_peripheral_gate
  ******************************************************************************/
 typedef enum
 {
-    ClkDBGTim0,             ///<  时钟0
-    ClkDBGTim1,             ///<  时钟1
-    ClkDBGTim2,             ///<  时钟2
-    ClkDBGLpTim,            ///<  低功耗时钟
-    ClkDBGTim4,             ///<  时钟4
-    ClkDBGTim5,             ///<  时钟5 
-    ClkDBGTim6,             ///<  时钟6 
-    ClkDBGTPca,             ///<  可编程计数阵列
-    ClkDBGTWdt,             ///<  看门狗
-    ClkDBGTRtc,             ///<  RTC
-    ClkDBGTTick,            ///<  systick
+    ClkDBGTim0       = 0u,             ///<  时钟0
+    ClkDBGTim1       = 1u,             ///<  时钟1
+    ClkDBGTim2       = 2u,             ///<  时钟2
+    ClkDBGLpTim      = 3u,             ///<  低功耗时钟
+    ClkDBGTim4       = 4u,             ///<  时钟4
+    ClkDBGTim5       = 5u,             ///<  时钟5 
+    ClkDBGTim6       = 6u,             ///<  时钟6 
+    ClkDBGTPca       = 7u,             ///<  可编程计数阵列
+    ClkDBGTWdt       = 8u,             ///<  看门狗
+    ClkDBGTRtc       = 9u,             ///<  RTC
+    ClkDBGTTick      = 10u,            ///<  systick
 }en_clk_debug_t;
 
 /**
@@ -225,25 +225,76 @@ typedef struct
     uint32_t            u32LoadVal; ///< 计数周期值
 }stc_clk_systickcfg_t;
 
-#define CLK_Unlock()                do {                                            \
-                                        M0P_CLOCK->SYSCTRL2 = 0x5A5A;               \
-                                        M0P_CLOCK->SYSCTRL2 = 0xA5A5;               \
-                                    } while(0)
+/**
+ *******************************************************************************
+ ** \brief 时钟初始化配置
+ ******************************************************************************/
+typedef struct
+{
+    en_clk_source_t enClkSrc;       ///< 时钟源选择
+    en_clk_div_t    enHClkDiv;      ///< 系统时钟分频系数
+    en_clk_div_t    enPClkDiv;      ///< 外设时钟分频系数
+}stc_clk_config_t;
 
-#define CLK_DummyWrite()            (M0P_CLOCK->SYSCTRL0_f.RESERVED11 = 0x0)
+/**
+ *******************************************************************************
+ ** \brief XTL晶体振幅枚举类型定义
+ ******************************************************************************/
+typedef enum en_sysctrl_xtl_amp
+{
+    SysctrlXtlAmp0 = 0x00,                ///< 最小振幅
+    SysctrlXtlAmp1 = 0x01,                ///< 正常振幅
+    SysctrlXtlAmp2 = 0x02,                ///< 较大振幅
+    SysctrlXtlAmp3 = 0x03,                ///< 最大振幅
+}en_clk_xtl_amp_t;
 
-#define CLK_EnablePeripheralClk(__PERIPHERAL_GATE_T__)      WRITE_BIT(&M0P_CLOCK->PERI_CLKEN, __PERIPHERAL_GATE_T__, 1)
-#define CLK_DisablePeripheralClk(__PERIPHERAL_GATE_T__)     WRITE_BIT(&M0P_CLOCK->PERI_CLKEN, __PERIPHERAL_GATE_T__, 0)
 
-#define CLK_EnableSysTickIrq()      SET_BIT(SysTick->CTRL, SysTick_CTRL_TICKINT_Msk)
-#define CLK_DisableSysTickIrq()     CLEAR_BIT(SysTick->CTRL, SysTick_CTRL_TICKINT_Msk)
+/**
+ *******************************************************************************
+ ** \brief XTL驱动能力类型定义
+ ******************************************************************************/
+typedef enum en_sysctrl_xtl_driver
+{
+    SysctrlXtlDriver0 = 0x00,                ///< 最弱驱动能力
+    SysctrlXtlDriver1 = 0x01,                ///< 弱驱动能力
+    SysctrlXtlDriver2 = 0x02,                ///< 一般驱动能力
+    SysctrlXtlDriver3 = 0x03,                ///< 最强驱动能力
+}en_clk_xtl_driver_t;
 
+/**
+ *******************************************************************************
+ ** \brief XTH频率值范围选择类型定义
+ ******************************************************************************/
+typedef enum en_sysctrl_xth_freq
+{
+    SysctrlXthFreq4_8MHz   = 0x00,                ///< 4~8MHz
+    SysctrlXthFreq8_16MHz  = 0x01,                ///< 8~16MHz
+    SysctrlXthFreq16_24MHz = 0x02,                ///< 16~24MHz
+    SysctrlXthFreq24_32MHz = 0x03,                ///< 24~32MHz
+}en_clk_xth_freq_t;
+
+
+/**
+ *******************************************************************************
+ ** \brief XTH驱动能力类型定义
+ ******************************************************************************/
+typedef enum en_sysctrl_xth_driver
+{
+    SysctrlXthDriver0 = 0x00,                ///< 最弱驱动能力
+    SysctrlXthDriver1 = 0x01,                ///< 弱驱动能力
+    SysctrlXthDriver2 = 0x02,                ///< 一般驱动能力
+    SysctrlXthDriver3 = 0x03,                ///< 最强驱动能力
+}en_clk_xth_driver_t;
+
+/******************************************************************************
+ * Global variable declarations ('extern', definition in C source)
+ ******************************************************************************/
 
 /******************************************************************************
  * Global function prototypes (definition in C source)
  ******************************************************************************/
-///< Clock Initialize
-en_result_t Clk_Init(en_clk_freq_t clkFreq, en_clk_div_t hclkDiv, en_clk_div_t pclkDiv);
+///< 时钟初始化 / 去初始化
+en_result_t Clk_Init(stc_clk_config_t *pstcCfg);
 en_result_t Clk_DeInit(void);
 
 ///< 时钟基本功能设置
@@ -253,6 +304,8 @@ boolean_t Clk_GetClkRdy(en_clk_source_t enSource);
 en_result_t Clk_SetXTH_StableTime(en_clk_cycle_t enCycle);
 en_result_t Clk_SetRCL_StableTime(en_clk_cycle_t enCycle);
 en_result_t Clk_SetXTL_StableTime(en_clk_cycle_t enCycle);
+en_result_t Clk_SetXTL_Driver(en_clk_xtl_amp_t enAmp, en_clk_xtl_driver_t enDriver);
+en_result_t Clk_SetXTH_Driver(en_clk_xth_freq_t enFreq, en_clk_xth_driver_t enDriver);
 
 ///< 时钟源切换
 en_result_t Clk_SwitchTo(en_clk_source_t enSource);
@@ -270,6 +323,8 @@ uint32_t Clk_GetHClkFreq(void);
 uint32_t Clk_GetPClkFreq(void);
 
 ///< 时钟外设门控开关
+en_result_t Clk_SetPeripheralGate(en_clk_peripheral_gate_t enPeripheral,
+                                  boolean_t bFlag);
 boolean_t Clk_GetPeripheralGate(en_clk_peripheral_gate_t enPeripheral);
 
 
@@ -289,7 +344,6 @@ uint32_t Clk_SysTickStcalibGet(void);
 //@} // ClkGroup
 
 #ifdef __cplusplus
-}
 #endif
 
 

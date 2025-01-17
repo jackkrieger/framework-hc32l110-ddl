@@ -1,28 +1,28 @@
 /******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -100,7 +100,7 @@
  ******************************************************************************/
 en_result_t Gpio_SetAnalog(uint8_t u8Port, uint8_t u8Pin, boolean_t bFlag)
 {
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0ADS + u8Port * GPIO_GPSZ, u8Pin, bFlag);
+    setBit((uint32_t)&M0P_GPIO->P0ADS + u8Port * GPIO_GPSZ, u8Pin, bFlag);
 
     return Ok;
 }
@@ -117,9 +117,10 @@ en_result_t Gpio_SetAnalog(uint8_t u8Port, uint8_t u8Pin, boolean_t bFlag)
  ** \retval Ok         设置成功
  **         其他值     设置失败
  ******************************************************************************/
-en_result_t Gpio_InitIO(uint8_t u8Port, uint8_t u8Pin, en_gpio_dir_t enDir)
+en_result_t Gpio_InitIO(uint8_t u8Port, uint8_t u8Pin,
+                        en_gpio_dir_t enDir)
 {
-    // Enable GPIO clock
+    //force open clock
     M0P_CLOCK->PERI_CLKEN_f.GPIO = 1;
     //force set mode, ignore result.
     Gpio_SetAnalog(u8Port, u8Pin, FALSE);
@@ -127,38 +128,41 @@ en_result_t Gpio_InitIO(uint8_t u8Port, uint8_t u8Pin, en_gpio_dir_t enDir)
     //fn
     *((volatile uint32_t *)((uint32_t)&M0P_GPIO->P01_SEL + u8Port * GPIO_GPSZ - 4 + u8Pin * 4)) = 0;
     //ADS
-    //WRITE_BIT((uint32_t)&M0P_GPIO->ADS0 + u8Port * GPIO_GPSZ, u8Pin, 0);
+    //setBit((uint32_t)&M0P_GPIO->ADS0 + u8Port * GPIO_GPSZ, u8Pin, 0);
     //dir
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0DIR + u8Port * GPIO_GPSZ, u8Pin, enDir);
+    setBit((uint32_t)&M0P_GPIO->P0DIR + u8Port * GPIO_GPSZ, u8Pin, enDir);
     //dr
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0PU + u8Port * GPIO_GPSZ, u8Pin, FALSE);
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0PD + u8Port * GPIO_GPSZ, u8Pin, FALSE);
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0OD + u8Port * GPIO_GPSZ, u8Pin, FALSE);
+    setBit((uint32_t)&M0P_GPIO->P0PU + u8Port * GPIO_GPSZ, u8Pin, FALSE);
+    setBit((uint32_t)&M0P_GPIO->P0PD + u8Port * GPIO_GPSZ, u8Pin, FALSE);
+    setBit((uint32_t)&M0P_GPIO->P0OD + u8Port * GPIO_GPSZ, u8Pin, FALSE);
 
     return Ok;
 }
 
 /**
  *******************************************************************************
- ** \brief   GPIO Initialization Extended 
+ ** \brief   GPIO 初始化2 
  ** 
- ** \param   [in]  u8Port             IO Port
- ** \param   [in]  u8Pin              IO Pin
- ** \param   [in]  enDir              Direction, input or output
- ** \param   [in]  bPullup            Pullup
- ** \param   [in]  bPulldown          Pulldown
- ** \param   [in]  bOdr               Open Drain
- ** \param   [in]  bDrive             Driver capability, 0:high, 1:normal 
+ ** \param   [in]  u8Port             IO Port口
+ ** \param   [in]  u8Pin              IO Pin脚
+ ** \param   [in]  enDir              IO 方向（输入或输出）
+ ** \param   [in]  bPullup            上拉开关
+ ** \param   [in]  bPulldown          下拉开关
+ ** \param   [in]  bOdr               开漏开关
+ ** \param   [in]  bDrive             驱动能力 
+ **                                   0 = 高
+ **                                   1 = 低
+ ** \retval     Ok         设置成功
+ **             其他值     设置失败
  ******************************************************************************/
-en_result_t Gpio_InitIOExt(uint8_t u8Port, 
-                           uint8_t u8Pin,
+en_result_t Gpio_InitIOExt(uint8_t u8Port, uint8_t u8Pin,
                            en_gpio_dir_t enDir,
                            boolean_t bPullup,
                            boolean_t bPulldown,
                            boolean_t bOdr,
                            boolean_t bDrive)
 {
-    // Enable GPIO clock
+    //force open clock
     M0P_CLOCK->PERI_CLKEN_f.GPIO = 1;
     //force set mode, ignore result.
     Gpio_SetAnalog(u8Port, u8Pin, FALSE);
@@ -166,15 +170,51 @@ en_result_t Gpio_InitIOExt(uint8_t u8Port,
     //fn
     *((volatile uint32_t *)((uint32_t)&M0P_GPIO->P01_SEL + u8Port * GPIO_GPSZ - 4 + u8Pin * 4)) = 0;
     //ADS
-    //WRITE_BIT((uint32_t)&M0P_GPIO->ADS0 + u8Port * GPIO_GPSZ, u8Pin, 0);
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0DIR + u8Port * GPIO_GPSZ, u8Pin, enDir);
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0DR + u8Port * GPIO_GPSZ, u8Pin, bDrive);
+    //setBit((uint32_t)&M0P_GPIO->ADS0 + u8Port * GPIO_GPSZ, u8Pin, 0);
+    //dir
+    setBit((uint32_t)&M0P_GPIO->P0DIR + u8Port * GPIO_GPSZ, u8Pin, enDir);
+    //dr
+    setBit((uint32_t)&M0P_GPIO->P0DR + u8Port * GPIO_GPSZ, u8Pin, bDrive);
 
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0PU + u8Port * GPIO_GPSZ, u8Pin, bPullup);
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0PD + u8Port * GPIO_GPSZ, u8Pin, bPulldown);
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0OD + u8Port * GPIO_GPSZ, u8Pin, bOdr);
+    setBit((uint32_t)&M0P_GPIO->P0PU + u8Port * GPIO_GPSZ, u8Pin, bPullup);
+    setBit((uint32_t)&M0P_GPIO->P0PD + u8Port * GPIO_GPSZ, u8Pin, bPulldown);
+    setBit((uint32_t)&M0P_GPIO->P0OD + u8Port * GPIO_GPSZ, u8Pin, bOdr);
 
     return Ok;
+}
+
+
+/**
+ *******************************************************************************
+ ** \brief GPIO IO输出值设定
+ **
+ ** \param [in]  u8Port          IO Port口
+ ** \param [in]  u8Pin           IO Pin脚
+ ** \param [in]  bVal            输出电平高低
+ **
+ ** \retval Ok         设置成功
+ **         其他值     设置失败
+ ******************************************************************************/
+void Gpio_SetIO(uint8_t u8Port, uint8_t u8Pin, boolean_t bVal)
+{
+    bVal = !!bVal;
+    setBit((uint32_t)&M0P_GPIO->P0OUT + u8Port * GPIO_GPSZ, u8Pin, bVal);
+}
+
+
+
+/**
+ *******************************************************************************
+ ** \brief GPIO IO输入值获取
+ **
+ ** \param [in]  u8Port          IO Port口
+ ** \param [in]  u8Pin           IO Pin脚
+ **
+ ** \retval boolean_t            IO电平高低
+ ******************************************************************************/
+boolean_t Gpio_GetIO(uint8_t u8Port, uint8_t u8Pin)
+{
+    return getBit((uint32_t)&M0P_GPIO->P0IN + u8Port * GPIO_GPSZ, u8Pin);
 }
 
 en_result_t _GpioEnableIrq(uint8_t u8Port,
@@ -185,22 +225,22 @@ en_result_t _GpioEnableIrq(uint8_t u8Port,
     //high level
     if (enType & GpioIrqHigh)
     {
-        WRITE_BIT((uint32_t)&M0P_GPIO->P0HIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
+        setBit((uint32_t)&M0P_GPIO->P0HIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
     }
     //low level
     if (enType & GpioIrqLow)
     {
-        WRITE_BIT((uint32_t)&M0P_GPIO->P0LIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
+        setBit((uint32_t)&M0P_GPIO->P0LIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
     }
     //rising
     if (enType & GpioIrqRising)
     {
-        WRITE_BIT((uint32_t)&M0P_GPIO->P0RIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
+        setBit((uint32_t)&M0P_GPIO->P0RIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
     }
     //falling
     if (enType & GpioIrqFalling)
     {
-        WRITE_BIT((uint32_t)&M0P_GPIO->P0FIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
+        setBit((uint32_t)&M0P_GPIO->P0FIE + u8Port * GPIO_GPSZ, u8Pin, bEnable);
     }
 
 
@@ -252,7 +292,7 @@ en_result_t Gpio_DisableIrq(uint8_t u8Port, uint8_t u8Pin, en_gpio_irqtype_t enT
  ******************************************************************************/
 boolean_t Gpio_GetIrqStat(uint8_t u8Port, uint8_t u8Pin)
 {
-    return READ_BIT((uint32_t)&M0P_GPIO->P0STAT + u8Port * GPIO_GPSZ, u8Pin);
+    return getBit((uint32_t)&M0P_GPIO->P0STAT + u8Port * 0x40, u8Pin);
 }
 
 
@@ -267,7 +307,7 @@ boolean_t Gpio_GetIrqStat(uint8_t u8Port, uint8_t u8Pin)
  ******************************************************************************/
 en_result_t Gpio_ClearIrq(uint8_t u8Port, uint8_t u8Pin)
 {
-    WRITE_BIT((uint32_t)&M0P_GPIO->P0ICLR + u8Port * GPIO_GPSZ, u8Pin, 0u);
+    setBit((uint32_t)&M0P_GPIO->P0ICLR + u8Port * GPIO_GPSZ, u8Pin, 0u);
 
     return Ok;
 }
@@ -288,11 +328,6 @@ en_result_t Gpio_SetCtrlExt(en_gpio_ctrlext_t enFunc, uint8_t u8val)
     
     switch (enFunc)
     {
-        case GpioCtrlIESEL:
-            u8val = !!u8val;
-            M0P_GPIO->CTRL0_f.IESEL = u8val;
-            break;
-
         case GpioCtrlIRPOL:
             u8val = !!u8val;
             M0P_GPIO->CTRL1_f.IR_POL = u8val;

@@ -1,28 +1,28 @@
 /******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -55,31 +55,22 @@
  ******************************************************************************/
 #include "ddl.h"
 #include "interrupts_hc32l110.h"
-
-__attribute__((weak)) void PORT0_IRQHandler(void);
-__attribute__((weak)) void PORT1_IRQHandler(void);
-__attribute__((weak)) void PORT2_IRQHandler(void);
-__attribute__((weak)) void PORT3_IRQHandler(void);
-__attribute__((weak)) void UART0_IRQHandler(void);
-__attribute__((weak)) void UART1_IRQHandler(void);
-__attribute__((weak)) void LPUART_IRQHandler(void);
-__attribute__((weak)) void SPI_IRQHandler(void);
-__attribute__((weak)) void I2C_IRQHandler(void);
-__attribute__((weak)) void TIM0_IRQHandler(void);
-__attribute__((weak)) void TIM1_IRQHandler(void);
-__attribute__((weak)) void TIM2_IRQHandler(void);
-__attribute__((weak)) void LPTIM_IRQHandler(void);
-
-__attribute__((weak)) void Adt_IRQHandler(uint8_t u8Param);
-
-__attribute__((weak)) void Pca_IRQHandler(uint8_t u8Param);
-__attribute__((weak)) void Wdt_IRQHandler(uint8_t u8Param);
-__attribute__((weak)) void Vc_IRQHandler(uint8_t u8Param);
-__attribute__((weak)) void Rtc_IRQHandler(uint8_t u8Param);
-__attribute__((weak)) void Adc_IRQHandler(uint8_t u8Param);
-__attribute__((weak)) void Lvd_IRQHandler(uint8_t u8Param);
-__attribute__((weak)) void EfRam_IRQHandler(uint8_t u8Param);
-__attribute__((weak)) void ClkTrim_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Gpio_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Uart_IRQHandler(uint8_t u8Param);
+__WEAKDEF void LpUart_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Spi_IRQHandler(uint8_t u8Param);
+__WEAKDEF void I2c_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Tim_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Adt_IRQHandler(uint8_t u8Param);
+__WEAKDEF void LpTim_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Pca_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Wdt_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Vc_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Rtc_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Adc_IRQHandler(uint8_t u8Param);
+__WEAKDEF void Lvd_IRQHandler(uint8_t u8Param);
+__WEAKDEF void EfRam_IRQHandler(uint8_t u8Param);
+__WEAKDEF void ClkTrim_IRQHandler(uint8_t u8Param);
 
 /**
  *******************************************************************************
@@ -91,7 +82,7 @@ __attribute__((weak)) void ClkTrim_IRQHandler(uint8_t u8Param);
  ** \retval    Ok       设置成功
  **            其他值   设置失败
  ******************************************************************************/
-void EnableNvic(uint32_t u32Irq, uint8_t u8Level, boolean_t bEn)
+void EnableNvic(uint32_t u32Irq,uint8_t u8Level,boolean_t bEn)
 {
     IRQn_Type enIrq = (IRQn_Type)u32Irq;
 
@@ -106,16 +97,12 @@ void EnableNvic(uint32_t u32Irq, uint8_t u8Level, boolean_t bEn)
 }
 
 /**
-  * @brief This function handles Non maskable interrupt.
-  */
-void NMI_Handler(void)
-{
-
-}
-
-/**
-  * @brief This function handles Hard fault interrupt.
-  */
+ *******************************************************************************
+ ** \brief NVIC hardware fault 中断实现
+ **        用于单步调试功能
+ **
+ ** \retval
+ ******************************************************************************/
 void HardFault_Handler(void)
 {
     volatile int a = 0;
@@ -127,19 +114,146 @@ void HardFault_Handler(void)
 }
 
 /**
-  * @brief This function handles System service call via SWI instruction.
-  */
-void SVC_Handler(void)
+ *******************************************************************************
+ ** \brief GPIO Port0 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void PORT0_IRQHandler(void)
 {
-
+    Gpio_IRQHandler(0);
 }
 
 /**
-  * @brief This function handles Pendable request for system service.
-  */
-void PendSV_Handler(void)
+ *******************************************************************************
+ ** \brief GPIO Port1 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void PORT1_IRQHandler(void)
 {
-  
+    Gpio_IRQHandler(1);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO Port2 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void PORT2_IRQHandler(void)
+{
+    Gpio_IRQHandler(2);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO Port3 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void PORT3_IRQHandler(void)
+{
+    Gpio_IRQHandler(3);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO 串口0 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void UART0_IRQHandler(void)
+{
+    Uart_IRQHandler(0);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO 串口1 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void UART1_IRQHandler(void)
+{
+    Uart_IRQHandler(1);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO 低功耗串口 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void LPUART_IRQHandler(void)
+{
+    LpUart_IRQHandler(0);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO SPI 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void SPI_IRQHandler(void)
+{
+    Spi_IRQHandler(0);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO I2C 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void I2C_IRQHandler(void)
+{
+    I2c_IRQHandler(0);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO 基础时钟0 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void TIM0_IRQHandler(void)
+{
+    Tim_IRQHandler(0);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO 基础时钟1 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void TIM1_IRQHandler(void)
+{
+    Tim_IRQHandler(1);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO 基础时钟2 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void TIM2_IRQHandler(void)
+{
+    Tim_IRQHandler(2);
+}
+
+/**
+ *******************************************************************************
+ ** \brief GPIO 低功耗时钟 中断处理函数
+ ** 
+ ** \retval
+ ******************************************************************************/
+void LPTIM_IRQHandler(void)
+{
+    LpTim_IRQHandler(0);
 }
 
 /**
@@ -273,3 +387,9 @@ void CLKTRIM_IRQHandler(void)
 {
     ClkTrim_IRQHandler(0);
 }
+
+
+
+/******************************************************************************/
+/* EOF (not truncated)                                                        */
+/******************************************************************************/

@@ -1,28 +1,28 @@
 /******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -421,6 +421,61 @@ void Adc_DeInit(void)
 
 /**
  * \brief   
+ *          ADC转换开始
+ *
+ * \param   无
+ *
+ * \retval  无
+ */
+
+void Adc_Start(void)
+{
+    M0P_ADC->ICLR_f.CONT_INTC = 0u;
+    M0P_ADC->CR0_f.STATERST = 1u;
+    M0P_ADC->CR0_f.START = 1u;
+}
+
+/**
+ * \brief   
+ *          ADC转换停止
+ *
+ * \param   无
+ *
+ * \retval  无
+ */
+void Adc_Stop(void)
+{
+    M0P_ADC->CR0_f.START = 0u;
+}
+
+/**
+ * \brief   
+ *          ADC使能
+ *
+ * \param   无
+ *
+ * \retval  无
+ */
+void Adc_Enable(void)
+{
+    M0P_ADC->CR0_f.ADCEN = 1u;
+}
+
+/**
+ * \brief   
+ *          ADC除能
+ *
+ * \param   无
+ *
+ * \retval  无
+ */
+void Adc_Disable(void)
+{
+    M0P_ADC->CR0_f.ADCEN = 0u;
+}
+
+/**
+ * \brief   
  *          配置普通转换模式
  *
  * \param   [in]  pstcAdcConfig   ADC配置指针
@@ -567,6 +622,72 @@ en_result_t Adc_GetAccResult(uint32_t* pu32AdcAccResult)
 void Adc_ClrAccResult(void)
 {
     M0P_ADC->CR1_f.RACC_CLR = 0u;
+}
+
+/**
+ * \brief   
+ *          获取扫描采样模式下指定通道的采样值
+ *
+ * \param   [in]  u8Channel  通道号
+ * \param   [out] pu16AdcResult  采样值指针
+ *
+ * \retval  en_result_t  Ok:  成功
+ * \retval  en_result_t  ErrorInvalidParameter: 无效参数
+ */
+en_result_t Adc_GetScanResult(uint8_t u8Channel, uint16_t* pu16AdcResult)
+{
+    if (NULL == pu16AdcResult)
+    {
+        return ErrorInvalidParameter;
+    }
+
+    switch (u8Channel)
+    {
+        case AdcExInputCH0:
+            *pu16AdcResult = M0P_ADC->RESULT0_f.RESULT0;
+            break;
+        case AdcExInputCH1:
+            *pu16AdcResult = M0P_ADC->RESULT1_f.RESULT1;
+            break;
+        case AdcExInputCH2:
+            *pu16AdcResult = M0P_ADC->RESULT2_f.RESULT2;
+            break;
+        case AdcExInputCH3:
+            *pu16AdcResult = M0P_ADC->RESULT3_f.RESULT3;
+            break;
+        case AdcExInputCH4:
+            *pu16AdcResult = M0P_ADC->RESULT4_f.RESULT4;
+            break;
+        case AdcExInputCH5:
+            *pu16AdcResult = M0P_ADC->RESULT5_f.RESULT5;
+            break;
+        case AdcExInputCH6:
+            *pu16AdcResult = M0P_ADC->RESULT6_f.RESULT6;
+            break;
+        case AdcExInputCH7:
+            *pu16AdcResult = M0P_ADC->RESULT7_f.RESULT7;
+            break;
+        default:
+            return ErrorInvalidParameter;
+    }
+    return Ok;
+}
+/**
+ * \brief   
+ *          获取ch8的采样值
+ * \param   [out] pu16AdcResult  采样值指针
+ *
+ * \retval  en_result_t  Ok:  成功
+ * \retval  en_result_t  ErrorInvalidParameter: 无效参数
+ */
+en_result_t Adc_GetCH8Result(uint16_t* pu16AdcResult)
+{  
+    if (NULL == pu16AdcResult)
+    {
+        return ErrorInvalidParameter;
+    }   
+    *pu16AdcResult = M0P_ADC->RESULT8_f.RESULT8;
+    return Ok;   
 }
 
 /**

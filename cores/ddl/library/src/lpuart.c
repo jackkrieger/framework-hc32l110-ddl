@@ -1,28 +1,28 @@
 /*************************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.    
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.    
 *
 * This software is owned and published by: 
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND 
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC 
-* components. This software is licensed by HDSC to be adapted only 
-* for use in systems utilizing HDSC components. HDSC shall not be 
+* This software contains source code for use with XHSC 
+* components. This software is licensed by XHSC to be adapted only 
+* for use in systems utilizing XHSC components. XHSC shall not be 
 * responsible for misuse or illegal use of this software for devices not 
-* supported herein. HDSC is providing this software "AS IS" and will 
+* supported herein. XHSC is providing this software "AS IS" and will 
 * not be responsible for issues arising from incorrect user implementation 
 * of the software.  
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS), 
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING, 
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED 
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED 
 * WARRANTY OF NONINFRINGEMENT.  
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT, 
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT, 
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT 
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, 
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR 
@@ -578,6 +578,35 @@ en_result_t LPUart_SendData(uint8_t u8Data)
     enRet = Ok;
     return enRet;
 }
+
+/**
+ ******************************************************************************
+ ** \brief lpuart通信发送数据函数,此函数只适用于查询方式发送数据
+ ** 
+ ** \param u32Data发送数据
+ **
+ ** \retval @ref en_result_t
+ ******************************************************************************/
+en_result_t LPUart_SendDataTimeOut(uint8_t u8Data, uint32_t u32TimeOut)
+{
+    en_result_t enRet = Error;
+    uint32_t u32Cnt = 0;
+    
+    LPUart_ClrStatus(LPUartTxEmpty);
+    M0P_LPUART->SBUF = u8Data;
+    while(FALSE == LPUart_GetStatus(LPUartTxEmpty))
+    {
+        if(u32Cnt > u32TimeOut)
+        {
+            return ErrorTimeout;
+        }
+        u32Cnt++;    
+    }
+    LPUart_ClrStatus(LPUartTxEmpty);
+    enRet = Ok;
+    return enRet;
+}
+
 /**
  ******************************************************************************
  ** \brief lpuart通信接收数据函数
@@ -613,30 +642,32 @@ static stc_lpuart_intern_cb_t* LPUartGetInternDataCb(void)
  ** \retval 无
  **
  ******************************************************************************/
-void LPUART_IRQHandler(void)
+void LpUart_IRQHandler(void)
 {
+    stc_lpuart_irq_cb_t* pstcLPUartInternCb;
+    pstcLPUartInternCb = LPUartGetInternDataCb();
     if(1 == M0P_LPUART->ISR_f.FE)
     {
         LPUart_ClrStatus(LPUartRFRAMEError);
-        if(NULL != stcLPUartIrqCb.pfnRxErrIrqCb)
+        if(NULL != pstcLPUartInternCb->pfnRxErrIrqCb)
         {
-            stcLPUartIrqCb.pfnRxErrIrqCb();
+            pstcLPUartInternCb->pfnRxErrIrqCb();
         }
     }
     if(1 == M0P_LPUART->ISR_f.RI)
     {
         LPUart_ClrStatus(LPUartRxFull);
-        if(NULL != stcLPUartIrqCb.pfnRxIrqCb)
+        if(NULL != pstcLPUartInternCb->pfnRxIrqCb)
         {
-            stcLPUartIrqCb.pfnRxIrqCb();
+            pstcLPUartInternCb->pfnRxIrqCb();
         }
     }
     if(1 == M0P_LPUART->ISR_f.TI)
     {
         LPUart_ClrStatus(LPUartTxEmpty);
-        if(NULL != stcLPUartIrqCb.pfnTxIrqCb)
+        if(NULL != pstcLPUartInternCb->pfnTxIrqCb)
         {
-            stcLPUartIrqCb.pfnTxIrqCb();
+            pstcLPUartInternCb->pfnTxIrqCb();
         }
     }
 }

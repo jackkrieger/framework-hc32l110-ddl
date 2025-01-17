@@ -1,28 +1,28 @@
 /******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -135,10 +135,10 @@ typedef struct stc_uart_multimode
 
 typedef enum en_uart_mode
 {
-    UartMode0 = 0u, // Mode0, 8-bit-width, sync, fixed baudrate = Fpclk / 12
-    UartMode1 = 1u, // Mode1, 10-bit-width, async, clocked by timer, baudrate = (DBAUD+1)*Fpclk / 32 / (65536 - Timer_Period)
-    UartMode2 = 2u, // Mode2, 11-bit-width, async, clocked by itself, baudrate = (DBAUD+1)*Fpclk / 64
-    UartMode3 = 3u, // Mode3, 11-bit-width, async, clocked by timer, baudrate = (DBAUD+1)*Fpclk / 32 / (65536 - Timer_Period)
+    UartMode0 = 0u, ///<模式0    
+    UartMode1 = 1u, ///<模式1
+    UartMode2 = 2u, ///<模式2
+    UartMode3 = 3u, ///<模式3
 } en_uart_mode_t;
 /**
  ******************************************************************************
@@ -146,8 +146,8 @@ typedef enum en_uart_mode
  ******************************************************************************/
 typedef enum en_uart_func
 {
-    UartTx = 0u, ///< mode0: TX    
-    UartRx = 1u, ///< mode0: RX; mode1,mode2,mode3:RX & TX
+    UartTx = 0u, ///<mode0模式代表TX    
+    UartRx = 1u, ///<非mode0模式代表RX and TX ,mode0模式代表RX  
 }en_uart_func_t;
 /**
  ******************************************************************************
@@ -204,6 +204,7 @@ typedef struct stc_uart_baud_config
  ******************************************************************************
  ** \uart 总体配置
  ******************************************************************************/
+
 typedef struct stc_uart_config
 {
     en_uart_mode_t       enRunMode;      ///< 四种模式配置
@@ -211,59 +212,15 @@ typedef struct stc_uart_config
     stc_uart_irq_cb_t*  pstcIrqCb;       ///<中断服务函数          
     boolean_t           bTouchNvic;      ///<NVIC中断使能    
 } stc_uart_config_t;
-
-#define UART0_SetMode(__UART_MODE__)    (M0P_UART0->SCON_f.SM01 = __UART_MODE__)
-#define UART1_SetMode(__UART_MODE__)    (M0P_UART1->SCON_f.SM01 = __UART_MODE__)
-
-#define UART0_SetDoubleBaud(__STATE__)    (M0P_UART0->SCON_f.DBAUD = __STATE__)
-#define UART1_SetDoubleBaud(__STATE__)    (M0P_UART1->SCON_f.DBAUD = __STATE__)
-// Calculate timer period, for UART mode1 and mode3 only
-#define UARTx_CalculatePeriod(__PCLK__, __DOUBLE_BAUD__, __BAUD__) (0x10000 - ((__PCLK__ * (__DOUBLE_BAUD__ + 1)) / __BAUD__ / 32))
-
-#define UART0_EnableTx()                (M0P_UART0->SCON_f.REN = 0)
-#define UART0_EnableRx()                (M0P_UART0->SCON_f.REN = 1)
-#define UART1_EnableTx()                (M0P_UART1->SCON_f.REN = 0)
-#define UART1_EnableRx()                (M0P_UART1->SCON_f.REN = 1)
-
-#define UART0_SetMultiModeOff()         (M0P_UART0->SCON_f.SM2 = 0)
-#define UART1_SetMultiModeOff()         (M0P_UART1->SCON_f.SM2 = 0)
-
-#define UART0_SetMultiMode(__U8_SLA_ADD__, __U8_ADD_MASK__)     do{         \
-                                        M0P_UART0->SCON_f.SM2 = 1;          \
-                                        M0P_UART0->SADDR = __U8_SLA_ADD__;  \
-                                        M0P_UART0->SADEN = __U8_ADD_MASK__; \
-                                    } while(0);
-
-#define UART1_SetMultiMode(__U8_SLA_ADD__, __U8_ADD_MASK__)     do{         \
-                                        M0P_UART1->SCON_f.SM2 = 1;          \
-                                        M0P_UART1->SADDR = __U8_SLA_ADD__;  \
-                                        M0P_UART1->SADEN = __U8_ADD_MASK__; \
-                                    } while(0);
-
-#define UART0_EnableTxSentIrq()         (M0P_UART0->SCON_f.TIEN = 1)
-#define UART0_EnableRxReceivedIrq()     (M0P_UART0->SCON_f.RIEN = 1)
-#define UART1_EnableTxSentIrq()         (M0P_UART1->SCON_f.TIEN = 1)
-#define UART1_EnableRxReceivedIrq()     (M0P_UART1->SCON_f.RIEN = 1)
-
-#define UART0_DisableTxSentIrq()         (M0P_UART0->SCON_f.TIEN = 0)
-#define UART0_DisableRxReceivedIrq()     (M0P_UART0->SCON_f.RIEN = 0)
-#define UART1_DisableTxSentIrq()         (M0P_UART1->SCON_f.TIEN = 0)
-#define UART1_DisableRxReceivedIrq()     (M0P_UART1->SCON_f.RIEN = 0)
-
-#define UART0_ClearRxReceivedStatus()   (M0P_UART0->ICR_f.RICLR = 0)
-#define UART0_ClearTxSentStatus()       (M0P_UART0->ICR_f.TICLR = 0)
-#define UART0_ClearFrameErrroStatus()   (M0P_UART0->ICR_f.FECLR = 0)
-#define UART1_ClearRxReceivedStatus()   (M0P_UART1->ICR_f.RICLR = 0)
-#define UART1_ClearTxSentStatus()       (M0P_UART1->ICR_f.TICLR = 0)
-#define UART1_ClearFrameErrroStatus()   (M0P_UART1->ICR_f.FECLR = 0)
-// UART0: read one byte received
-#define UART0_RxReceive()               (M0P_UART0->SBUF)
-// UART1: read one byte received
-#define UART1_RxReceive()               (M0P_UART1->SBUF)
-
-void Uart0_SetCallback(stc_uart_irq_cb_t *callbacks);
-void Uart1_SetCallback(stc_uart_irq_cb_t *callbacks);
-
+//中断相关设置函数
+en_result_t Uart_EnableIrq(uint8_t u8Idx,
+                           en_uart_irq_sel_t enIrqSel);
+en_result_t Uart_DisableIrq(uint8_t u8Idx,
+                            en_uart_irq_sel_t enIrqSel);
+//void Uart_IrqHandler(uint8_t u8Idx);
+// 总初始化处理
+en_result_t Uart_Init(uint8_t u8Idx, 
+                      stc_uart_config_t* pstcConfig);
 en_result_t Uart_DeInit(uint8_t u8Idx, boolean_t bTouchNvic);
 //工作模式配置、多主机模式下从机地址和地址掩码设置
 en_result_t Uart_SetMode(uint8_t u8Idx,en_uart_mode_t enMode);
@@ -280,37 +237,28 @@ en_result_t Uart_CheckEvenOrOdd(uint8_t u8Idx,en_uart_check_t enCheck,uint8_t u8
 
 // 波特率设置
 uint16_t Uart_SetBaudRate(uint8_t u8Idx,uint32_t u32pclk,stc_uart_baud_config_t* pstcBaud);
-
+                             
+// 发送或接收使能和禁止
+en_result_t Uart_EnableFunc(uint8_t u8Idx, en_uart_func_t enFunc);
+en_result_t Uart_DisableFunc(uint8_t u8Idx, en_uart_func_t enFunc);
 //状态位的获取和清除
 boolean_t Uart_GetStatus(uint8_t u8Idx,en_uart_status_t enStatus);
 en_result_t Uart_ClrStatus(uint8_t u8Idx,en_uart_status_t enStatus);
 //数据查询方式的收发操作
 //en_result_t  Uart_MultiSendFirstData(uint8_t U8Addr);
-
-void Uart0_Init(uint32_t baud);
-void Uart1_Init(uint32_t baud);
-void Uart0_TxRx_Init(uint32_t baud, func_ptr_t rxCallback);
-void Uart1_TxRx_Init(uint32_t baud, func_ptr_t rxCallback);
-
-en_result_t Uart0_TxChar(uint8_t u8Data);
-en_result_t Uart1_TxChar(uint8_t u8Data);
-
-void Uart0_TxHex8Bit(uint8_t hex);
-void Uart1_TxHex8Bit(uint8_t hex);
-
-void Uart0_TxHexArray(uint8_t *hex, uint8_t len);
-void Uart1_TxHexArray(uint8_t *hex, uint8_t len);
-
-void Uart0_TxHexArrayRevert(uint8_t *hex, uint8_t len);
-void Uart1_TxHexArrayRevert(uint8_t *hex, uint8_t len);
-
-void Uart0_TxString(char *str);
-void Uart1_TxString(char *str);
+en_result_t Uart_SendData(uint8_t u8Idx, uint8_t u8Data);
+en_result_t Uart_SendDataTimeOut(uint8_t u8Idx, uint8_t u8Data, uint32_t u32TimeOut);
+uint8_t Uart_ReceiveData(uint8_t u8Idx);
 
 //@} // UartGroup
 
 #ifdef __cplusplus
-}
 #endif
 
 #endif /* __UART_H__ */
+/******************************************************************************
+ * EOF (not truncated)
+ *****************************************************************************/
+
+
+

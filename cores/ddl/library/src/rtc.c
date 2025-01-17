@@ -1,28 +1,28 @@
 /*************************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.    
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.    
 *
 * This software is owned and published by: 
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND 
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC 
-* components. This software is licensed by HDSC to be adapted only 
-* for use in systems utilizing HDSC components. HDSC shall not be 
+* This software contains source code for use with XHSC 
+* components. This software is licensed by XHSC to be adapted only 
+* for use in systems utilizing XHSC components. XHSC shall not be 
 * responsible for misuse or illegal use of this software for devices not 
-* supported herein. HDSC is providing this software "AS IS" and will 
+* supported herein. XHSC is providing this software "AS IS" and will 
 * not be responsible for issues arising from incorrect user implementation 
 * of the software.  
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS), 
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING, 
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED 
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED 
 * WARRANTY OF NONINFRINGEMENT.  
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT, 
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT, 
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT 
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION, 
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR 
@@ -195,11 +195,11 @@ en_result_t Rtc_SetAlarmTime(stc_rtc_alarmset_t* pstcAlarmTime)
     ASSERT(NULL != pstcAlarmTime);
     if(Rtc12h == M0P_RTC->CR0_f.AMPM)
     {
-        enRet = Check_BCD_Format(pstcAlarmTime->u8Hour,0x00,0x12);
+        enRet = Check_BCD_Format(pstcAlarmTime->u8Hour,0x01,0x12);
     }
     else
     {
-        enRet = Check_BCD_Format(pstcAlarmTime->u8Hour,0x00,0x24);
+        enRet = Check_BCD_Format(pstcAlarmTime->u8Hour,0x00,0x23);
     }
     if(enRet != Ok)
     {
@@ -444,9 +444,9 @@ en_result_t Rtc_CheckDateTimeFormat(uint8_t* pu8TimeDate,uint8_t u8Mode)
     uint8_t u8mon_max_day = 0x28;
     uint8_t u8date[3];
     en_result_t enRet=Error;
-    while (u8i < 7)
+    while(u8i<7)
     {
-        if (u8Mode & (1 << u8i))
+        if(u8Mode&&(1<<u8i))
         {
             switch(u8i)
             {
@@ -459,11 +459,11 @@ en_result_t Rtc_CheckDateTimeFormat(uint8_t* pu8TimeDate,uint8_t u8Mode)
                 case 2:
                     if(Rtc12h == M0P_RTC->CR0_f.AMPM)
                     {
-                        enRet = Check_BCD_Format(*pu8TimeDate,0x00,0x12);//时
+                        enRet = Check_BCD_Format(*pu8TimeDate,0x01,0x12);//时
                     }
                     else
                     {
-                        enRet = Check_BCD_Format(*pu8TimeDate,0x00,0x24);
+                        enRet = Check_BCD_Format(*pu8TimeDate,0x00,0x23);
                     }
                     break;
                 case 3:
@@ -492,9 +492,9 @@ en_result_t Rtc_CheckDateTimeFormat(uint8_t* pu8TimeDate,uint8_t u8Mode)
         }
         u8i++;
     }
-    if ((u8Mode & 0x10) && (u8Mode & 0x20))
+       if((u8Mode&0x10)&&(u8Mode&0x20))
     {
-        if (u8Mode & 0x40)
+        if(u8Mode&0x40)
         {
           u8mon_max_day = Get_Month_Max_Day(Change_DateTimeFormat(u8date[1]), Change_DateTimeFormat(u8date[2]));
         }
@@ -502,14 +502,14 @@ en_result_t Rtc_CheckDateTimeFormat(uint8_t* pu8TimeDate,uint8_t u8Mode)
         {
             u8mon_max_day = Get_Month_Max_Day(Change_DateTimeFormat(u8date[1]), 1);
         }
-        if (u8date[0] > u8mon_max_day)
+        if(u8date[0]>u8mon_max_day)
         {
             return Error;
         }
     }
-    if ((u8Mode & 0x10) && (!(u8Mode & 0x20)))
+    if((u8Mode&0x10)&&(!(u8Mode&0x20)))
     {
-        if (u8date[0] > 0x28)
+        if(u8date[0]>0x28)
         {
             return Error;
         }
@@ -552,7 +552,7 @@ en_result_t Rtc_WriteDateTime(stc_rtc_time_t* pstcTimeDate,boolean_t bUpdateTime
     }
     if(TRUE == bUpdateTime)
     {
-        enRet = Rtc_CheckDateTimeFormat(pu8TimeDate, CkTime);
+        enRet = Rtc_CheckDateTimeFormat(pu8TimeDate,CkTime);
         if(enRet != Ok)
         {
             return enRet;

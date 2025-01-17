@@ -1,286 +1,279 @@
-;/******************************************************************************
-;* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
-;*
-;* This software is owned and published by:
-;* Huada Semiconductor Co.,Ltd ("HDSC").
-;*
-;* BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
-;* BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
-;*
-;* This software contains source code for use with HDSC
-;* components. This software is licensed by HDSC to be adapted only
-;* for use in systems utilizing HDSC components. HDSC shall not be
-;* responsible for misuse or illegal use of this software for devices not
-;* supported herein. HDSC is providing this software "AS IS" and will
-;* not be responsible for issues arising from incorrect user implementation
-;* of the software.
-;*
-;* Disclaimer:
-;* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
-;* REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
-;* ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
-;* WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
-;* WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
-;* WARRANTY OF NONINFRINGEMENT.
-;* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
-;* NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
-;* LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
-;* LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
-;* INABILITY TO USE THE SOFTWARE, INCLUDING, WITHOUT LIMITATION, ANY DIRECT,
-;* INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL DAMAGES OR LOSS OF DATA,
-;* SAVINGS OR PROFITS,
-;* EVEN IF Disclaimer HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-;* YOU ASSUME ALL RESPONSIBILITIES FOR SELECTION OF THE SOFTWARE TO ACHIEVE YOUR
-;* INTENDED RESULTS, AND FOR THE INSTALLATION OF, USE OF, AND RESULTS OBTAINED
-;* FROM, THE SOFTWARE.
-;*
-;* This software may be replicated in part or whole for the licensed use,
-;* with the restriction that this Disclaimer and Copyright notice must be
-;* included with each copy of this software, whether used in part or whole,
-;* at all times.
-;*/
-;/*****************************************************************************/
+/*
+;*******************************************************************************
+; Copyright (C) 2016, Huada Semiconductor Co.,Ltd All rights reserved.
+;
+; This software is owned and published by:
+; Huada Semiconductor Co.,Ltd ("HDSC").
+;
+; BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
+; BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
+;
+; This software contains source code for use with HDSC
+; components. This software is licensed by HDSC to be adapted only
+; for use in systems utilizing HDSC components. HDSC shall not be
+; responsible for misuse or illegal use of this software for devices not
+; supported herein. HDSC is providing this software "AS IS" and will
+; not be responsible for issues arising from incorrect user implementation
+; of the software.
+;
+; Disclaimer:
+; HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+; REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
+; ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
+; WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
+; WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
+; WARRANTY OF NONINFRINGEMENT.
+; HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+; NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
+; LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
+; LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
+; INABILITY TO USE THE SOFTWARE, INCLUDING, WITHOUT LIMITATION, ANY DIRECT,
+; INDIRECT, INCIDENTAL, SPECIAL OR CONSEQUENTIAL DAMAGES OR LOSS OF DATA,
+; SAVINGS OR PROFITS,
+; EVEN IF Disclaimer HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+; YOU ASSUME ALL RESPONSIBILITIES FOR SELECTION OF THE SOFTWARE TO ACHIEVE YOUR
+; INTENDED RESULTS, AND FOR THE INSTALLATION OF, USE OF, AND RESULTS OBTAINED
+; FROM, THE SOFTWARE.
+;
+; This software may be replicated in part or whole for the licensed use,
+; with the restriction that this Disclaimer and Copyright notice must be
+; included with each copy of this software, whether used in part or whole,
+; at all times.
+;/
+*/
+/*****************************************************************************/
+/*  Startup for GCC                                                          */
+/*  Version     V1.0                                                         */
+/*  Date        2019-03-13                                                   */
+/*  Target-mcu  HC32L110                                                     */
+/*****************************************************************************/
 
-;/*****************************************************************************/
-;/*  Startup for ARM                                                          */
-;/*  Version     V1.0                                                         */
-;/*  Date        2017-12-12                                                   */
-;/*  Target-mcu  {HC32L110}                                                   */
-;/*****************************************************************************/
+/*
+;//-------- <<< Use Configuration Wizard in Context Menu >>> ------------------
+*/
 
-; Stack Configuration
-; Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
-
-Stack_Size      EQU     0x00000100
-
-                AREA    STACK, NOINIT, READWRITE, ALIGN=3
-Stack_Mem       SPACE   Stack_Size
-__initial_sp
-
-
-; Heap Configuration
-;  Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
-
-Heap_Size       EQU     0x00000100
-
-                AREA    HEAP, NOINIT, READWRITE, ALIGN=3
-__heap_base
-Heap_Mem        SPACE   Heap_Size
-__heap_limit
+                .syntax     unified
+                .arch       armv6-m
+                .cpu        cortex-m0plus
+                .thumb
 
 
-                PRESERVE8
-                THUMB
+/*
+;<h> Interrupt vector table start.
+*/
+                .section    .vectors, "a", %progbits
+                .align      2
+                .type       __Vectors, %object
+                .globl      __Vectors
+                .globl      __Vectors_End
+                .globl      __Vectors_Size
+__Vectors:
+                .long       __StackTop                         /*     Top of Stack */
+                .long       Reset_Handler                      /*     Reset Handler */
+                .long       NMI_Handler                        /* -14 NMI Handler */
+                .long       HardFault_Handler                  /* -13 Hard Fault Handler */
+                .long       0                                  /*     Reserved */
+                .long       0                                  /*     Reserved */
+                .long       0                                  /*     Reserved */
+                .long       0                                  /*     Reserved */
+                .long       0                                  /*     Reserved */
+                .long       0                                  /*     Reserved */
+                .long       0                                  /*     Reserved */
+                .long       SVC_Handler                        /*  -5 SVCall Handler */
+                .long       0                                  /*     Reserved */
+                .long       0                                  /*     Reserved */
+                .long       PendSV_Handler                     /*  -2 PendSV Handler */
+                .long       SysTick_Handler                    /*  -1 SysTick Handler */
 
+                /* Interrupts */
+                .long       IRQ000_Handler
+                .long       IRQ001_Handler
+                .long       IRQ002_Handler
+                .long       IRQ003_Handler
+                .long       IRQ004_Handler
+                .long       IRQ005_Handler
+                .long       IRQ006_Handler
+                .long       IRQ007_Handler
+                .long       IRQ008_Handler
+                .long       IRQ009_Handler
+                .long       IRQ010_Handler
+                .long       IRQ011_Handler
+                .long       IRQ012_Handler
+                .long       IRQ013_Handler
+                .long       IRQ014_Handler
+                .long       IRQ015_Handler
+                .long       IRQ016_Handler
+                .long       IRQ017_Handler
+                .long       IRQ018_Handler
+                .long       IRQ019_Handler
+                .long       IRQ020_Handler
+                .long       IRQ021_Handler
+                .long       IRQ022_Handler
+                .long       IRQ023_Handler
+                .long       IRQ024_Handler
+                .long       IRQ025_Handler
+                .long       IRQ026_Handler
+                .long       IRQ027_Handler
+                .long       IRQ028_Handler
+                .long       IRQ029_Handler
+                .long       IRQ030_Handler
+                .long       IRQ031_Handler
+__Vectors_End:
+                .equ        __Vectors_Size, __Vectors_End - __Vectors
+                .size       __Vectors, . - __Vectors
+/*
+;<h> Interrupt vector table end.
+*/
 
-; Vector Table Mapped to Address 0 at Reset
+/*
+;<h> Reset handler start.
+*/
+                .section    .text.Reset_Handler
+                .align      2
+                .weak       Reset_Handler
+                .type       Reset_Handler, %function
+                .globl      Reset_Handler
+Reset_Handler:
+                /* Set stack top pointer. */
+                /*ldr         sp, =__StackTop*/
+/* Single section scheme.
+ *
+ * The ranges of copy from/to are specified by following symbols
+ *   __etext: LMA of start of the section to copy from. Usually end of text
+ *   __data_start__: VMA of start of the section to copy to
+ *   __data_end__: VMA of end of the section to copy to
+ *
+ * All addresses must be aligned to 4 bytes boundary.
+ */
+                /* Copy data from read only memory to RAM. */
+CopyData:
+                ldr         r1, =__etext
+                ldr         r2, =__data_start__
+                ldr         r3, =__data_end__
 
-                AREA    RESET, DATA, READONLY
-                EXPORT  __Vectors
-                EXPORT  __Vectors_End
-                EXPORT  __Vectors_Size
+                subs        r3, r2
+                ble         CopyLoopExit
+CopyLoop:
+                subs        r3, #4
+                ldr         r0, [r1,r3]
+                str         r0, [r2,r3]
+                bgt         CopyLoop
+CopyLoopExit:
 
-__Vectors                       
-                DCD     __initial_sp              ; Top of Stack
-                DCD     Reset_Handler             ; Reset        
-                DCD     NMI_Handler               ; NMI
-                DCD     HardFault_Handler         ; Hard Fault
-                DCD     0                         ; Reserved
-                DCD     0                         ; Reserved
-                DCD     0                         ; Reserved
-                DCD     0                         ; Reserved
-                DCD     0                         ; Reserved
-                DCD     0                         ; Reserved
-                DCD     0                         ; Reserved
-                DCD     SVC_Handler               ; SVCall
-                DCD     0                         ; Reserved
-                DCD     0                         ; Reserved
-                DCD     PendSV_Handler            ; PendSV
-                DCD     SysTick_Handler           ; SysTick
+/* This part of work usually is done in C library startup code.
+ * Otherwise, define this macro to enable it in this startup.
+ *
+ * There are two schemes too.
+ * One can clear multiple BSS sections. Another can only clear one section.
+ * The former is more size expensive than the latter.
+ *
+ * Define macro __STARTUP_CLEAR_BSS_MULTIPLE to choose the former.
+ * Otherwise define macro __STARTUP_CLEAR_BSS to choose the later.
+ */
+/* Single BSS section scheme.
+ *
+ * The BSS section is specified by following symbols
+ *   __bss_start__: start of the BSS section.
+ *   __bss_end__: end of the BSS section.
+ *
+ * Both addresses must be aligned to 4 bytes boundary.
+ */
+                /* Clear BSS section. */
+ClearBss:
+                ldr         r1, =__bss_start__
+                ldr         r2, =__bss_end__
 
-                DCD     PORT0_IRQHandler
-                DCD     PORT1_IRQHandler
-                DCD     PORT2_IRQHandler
-                DCD     PORT3_IRQHandler
-                DCD     Dummy_Handler
-                DCD     Dummy_Handler
-                DCD     UART0_IRQHandler
-                DCD     UART1_IRQHandler
-                DCD     LPUART_IRQHandler
-                DCD     Dummy_Handler
-                DCD     SPI_IRQHandler
-                DCD     Dummy_Handler
-                DCD     I2C_IRQHandler
-                DCD     Dummy_Handler
-                DCD     TIM0_IRQHandler
-                DCD     TIM1_IRQHandler
-                DCD     TIM2_IRQHandler
-                DCD     LPTIM_IRQHandler
-                DCD     TIM4_IRQHandler
-                DCD     TIM5_IRQHandler
-                DCD     TIM6_IRQHandler
-                DCD     PCA_IRQHandler
-                DCD     WDT_IRQHandler
-                DCD     RTC_IRQHandler
-                DCD     ADC_IRQHandler
-                DCD     Dummy_Handler
-                DCD     VC0_IRQHandler
-                DCD     VC1_IRQHandler
-                DCD     LVD_IRQHandler
-                DCD     Dummy_Handler
-                DCD     EF_RAM_IRQHandler
-                DCD     CLKTRIM_IRQHandler
+                movs        r0, 0
+                subs        r2, r1
+                ble         ClearLoopExit
+ClearLoop:
+                subs        r2, #4
+                str         r0, [r1, r2]
+                bgt         ClearLoop
+ClearLoopExit:
+                /* reset NVIC if in rom debug */
+                ldr         r0, =0x20000000
+                ldr         r2, =0x0
+                movs        r1, #0
+                add         r1, pc, #0
+                cmp         r1, r0
+                bls         Rom_Code
+                /* ram code base address. */
+                add         r2, r0, r2
+Rom_Code:
+                /* reset vector table address */
+                ldr         r0, =0xE000ED08
+                str         r2, [r0]
+                /* Call the clock system initialization function. */
+                bl          SystemInit
+                /* Call the application's entry point. */
+                bl          main
+                bx          lr
+                .size       Reset_Handler, . - Reset_Handler
+/*
+;<h> Reset handler end.
+*/
 
-                
+/*
+;<h> Default handler start.
+*/
+                .section    .text.Default_Handler, "ax", %progbits
+                .align      2
+Default_Handler:
+                b           .
+                .size       Default_Handler, . - Default_Handler
+/*
+;<h> Default handler end.
+*/
 
-__Vectors_End
+/* Macro to define default exception/interrupt handlers.
+ * Default handler are weak symbols with an endless loop.
+ * They can be overwritten by real handlers.
+ */
+                .macro      Set_Default_Handler  Handler_Name
+                .weak       \Handler_Name
+                .set        \Handler_Name, Default_Handler
+                .endm
 
-__Vectors_Size 	EQU     __Vectors_End - __Vectors
+/* Default exception/interrupt handler */
 
-                AREA    |.text|, CODE, READONLY
+                Set_Default_Handler    NMI_Handler
+                Set_Default_Handler    HardFault_Handler
+                Set_Default_Handler    SVC_Handler
+                Set_Default_Handler    PendSV_Handler
+                Set_Default_Handler    SysTick_Handler
 
+		Set_Default_Handler    IRQ000_Handler
+                Set_Default_Handler    IRQ001_Handler
+                Set_Default_Handler    IRQ002_Handler
+                Set_Default_Handler    IRQ003_Handler
+                Set_Default_Handler    IRQ004_Handler
+                Set_Default_Handler    IRQ005_Handler
+                Set_Default_Handler    IRQ006_Handler
+                Set_Default_Handler    IRQ007_Handler
+                Set_Default_Handler    IRQ008_Handler
+                Set_Default_Handler    IRQ009_Handler
+                Set_Default_Handler    IRQ010_Handler
+                Set_Default_Handler    IRQ011_Handler
+                Set_Default_Handler    IRQ012_Handler
+                Set_Default_Handler    IRQ013_Handler
+                Set_Default_Handler    IRQ014_Handler
+                Set_Default_Handler    IRQ015_Handler
+                Set_Default_Handler    IRQ016_Handler
+                Set_Default_Handler    IRQ017_Handler
+                Set_Default_Handler    IRQ018_Handler
+                Set_Default_Handler    IRQ019_Handler
+                Set_Default_Handler    IRQ020_Handler
+                Set_Default_Handler    IRQ021_Handler
+                Set_Default_Handler    IRQ022_Handler
+                Set_Default_Handler    IRQ023_Handler
+                Set_Default_Handler    IRQ024_Handler
+                Set_Default_Handler    IRQ025_Handler
+                Set_Default_Handler    IRQ026_Handler
+                Set_Default_Handler    IRQ027_Handler
+                Set_Default_Handler    IRQ028_Handler
+                Set_Default_Handler    IRQ029_Handler
+                Set_Default_Handler    IRQ030_Handler
+                Set_Default_Handler    IRQ031_Handler
 
-; Reset Handler
-
-Reset_Handler   PROC
-                EXPORT  Reset_Handler             [WEAK]
-                IMPORT  SystemInit
-                IMPORT  __main
-
-               ;reset NVIC if in rom debug
-                LDR     R0, =0x20000000
-                LDR     R2, =0x0
-                MOVS    R1, #0                 ; for warning, 
-                ADD     R1, PC,#0              ; for A1609W, 
-                CMP     R1, R0
-                BLS     RAMCODE
-
-              ; ram code base address. 
-                ADD     R2, R0,R2
-RAMCODE
-              ; reset Vector table address.
-                LDR     R0, =0xE000ED08 
-                STR     R2, [R0]
-
-                LDR     R0, =SystemInit
-                BLX     R0
-                LDR     R0, =__main
-                BX      R0
-                ENDP
-
-
-; Dummy Exception Handlers (infinite loops which can be modified)
-
-NMI_Handler     PROC
-                EXPORT  NMI_Handler               [WEAK]
-                B       .
-                ENDP
-                
-                
-HardFault_Handler\
-                PROC
-                EXPORT  HardFault_Handler         [WEAK]
-                B       .
-                ENDP
-SVC_Handler     PROC
-                EXPORT  SVC_Handler               [WEAK]
-                B       .
-                ENDP
-PendSV_Handler  PROC
-                EXPORT  PendSV_Handler            [WEAK]
-                B       .
-                ENDP
-SysTick_Handler PROC
-                EXPORT  SysTick_Handler           [WEAK]
-                B       .
-                ENDP
-
-Default_Handler PROC
-                EXPORT  PORT0_IRQHandler                [WEAK]
-                EXPORT  PORT1_IRQHandler                [WEAK]
-                EXPORT  PORT2_IRQHandler                [WEAK]
-                EXPORT  PORT3_IRQHandler                [WEAK]
-                EXPORT  Dummy_Handler                   [WEAK]
-                EXPORT  UART0_IRQHandler                [WEAK]
-                EXPORT  UART1_IRQHandler                [WEAK]
-                EXPORT  LPUART_IRQHandler               [WEAK]
-                EXPORT  SPI_IRQHandler                  [WEAK]
-                EXPORT  I2C_IRQHandler                  [WEAK]
-                EXPORT  TIM0_IRQHandler                 [WEAK]
-                EXPORT  TIM1_IRQHandler                 [WEAK]
-                EXPORT  TIM2_IRQHandler                 [WEAK]
-                EXPORT  LPTIM_IRQHandler                [WEAK]
-                EXPORT  TIM4_IRQHandler                 [WEAK]
-                EXPORT  TIM5_IRQHandler                 [WEAK]
-                EXPORT  TIM6_IRQHandler                 [WEAK]
-                EXPORT  PCA_IRQHandler                  [WEAK]
-                EXPORT  WDT_IRQHandler                  [WEAK]
-                EXPORT  RTC_IRQHandler                  [WEAK]
-                EXPORT  ADC_IRQHandler                  [WEAK]
-                EXPORT  VC0_IRQHandler                  [WEAK]
-                EXPORT  VC1_IRQHandler                  [WEAK]
-                EXPORT  LVD_IRQHandler                  [WEAK]
-                EXPORT  EF_RAM_IRQHandler               [WEAK]
-                EXPORT  CLKTRIM_IRQHandler              [WEAK]
-PORT0_IRQHandler
-PORT1_IRQHandler
-PORT2_IRQHandler
-PORT3_IRQHandler
-Dummy_Handler
-UART0_IRQHandler
-UART1_IRQHandler
-LPUART_IRQHandler
-SPI_IRQHandler
-I2C_IRQHandler
-TIM0_IRQHandler
-TIM1_IRQHandler
-TIM2_IRQHandler
-LPTIM_IRQHandler
-TIM4_IRQHandler
-TIM5_IRQHandler
-TIM6_IRQHandler
-PCA_IRQHandler
-WDT_IRQHandler
-RTC_IRQHandler
-ADC_IRQHandler
-VC0_IRQHandler
-VC1_IRQHandler
-LVD_IRQHandler
-EF_RAM_IRQHandler
-CLKTRIM_IRQHandler
-
-                
-               B .
-
-                ENDP
-
-
-                ALIGN
-
-
-; User Initial Stack & Heap
-
-                IF      :DEF:__MICROLIB
-
-                EXPORT  __initial_sp
-                EXPORT  __heap_base
-                EXPORT  __heap_limit
-
-                ELSE
-
-                IMPORT  __use_two_region_memory
-                EXPORT  __user_initial_stackheap
-__user_initial_stackheap
-
-                LDR     R0, =  Heap_Mem
-                LDR     R1, =(Stack_Mem + Stack_Size)
-                LDR     R2, = (Heap_Mem +  Heap_Size)
-                LDR     R3, = Stack_Mem
-                BX      LR
-
-                ALIGN
-
-                ENDIF
-
-
-                END
+                .end

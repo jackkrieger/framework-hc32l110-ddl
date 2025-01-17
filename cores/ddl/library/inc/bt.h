@@ -1,28 +1,28 @@
 /******************************************************************************
-* Copyright (C) 2017, Huada Semiconductor Co.,Ltd All rights reserved.
+* Copyright (C) 2017, Xiaohua Semiconductor Co.,Ltd All rights reserved.
 *
 * This software is owned and published by:
-* Huada Semiconductor Co.,Ltd ("HDSC").
+* Xiaohua Semiconductor Co.,Ltd ("XHSC").
 *
 * BY DOWNLOADING, INSTALLING OR USING THIS SOFTWARE, YOU AGREE TO BE BOUND
 * BY ALL THE TERMS AND CONDITIONS OF THIS AGREEMENT.
 *
-* This software contains source code for use with HDSC
-* components. This software is licensed by HDSC to be adapted only
-* for use in systems utilizing HDSC components. HDSC shall not be
+* This software contains source code for use with XHSC
+* components. This software is licensed by XHSC to be adapted only
+* for use in systems utilizing XHSC components. XHSC shall not be
 * responsible for misuse or illegal use of this software for devices not
-* supported herein. HDSC is providing this software "AS IS" and will
+* supported herein. XHSC is providing this software "AS IS" and will
 * not be responsible for issues arising from incorrect user implementation
 * of the software.
 *
 * Disclaimer:
-* HDSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
+* XHSC MAKES NO WARRANTY, EXPRESS OR IMPLIED, ARISING BY LAW OR OTHERWISE,
 * REGARDING THE SOFTWARE (INCLUDING ANY ACOOMPANYING WRITTEN MATERIALS),
 * ITS PERFORMANCE OR SUITABILITY FOR YOUR INTENDED USE, INCLUDING,
 * WITHOUT LIMITATION, THE IMPLIED WARRANTY OF MERCHANTABILITY, THE IMPLIED
 * WARRANTY OF FITNESS FOR A PARTICULAR PURPOSE OR USE, AND THE IMPLIED
 * WARRANTY OF NONINFRINGEMENT.
-* HDSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
+* XHSC SHALL HAVE NO LIABILITY (WHETHER IN CONTRACT, WARRANTY, TORT,
 * NEGLIGENCE OR OTHERWISE) FOR ANY DAMAGES WHATSOEVER (INCLUDING, WITHOUT
 * LIMITATION, DAMAGES FOR LOSS OF BUSINESS PROFITS, BUSINESS INTERRUPTION,
 * LOSS OF BUSINESS INFORMATION, OR OTHER PECUNIARY LOSS) ARISING FROM USE OR
@@ -50,8 +50,8 @@
  **
  *****************************************************************************/
 
-#ifndef __BASE_TIMER_H__
-#define __BASE_TIMER_H__
+#ifndef __BT_H__
+#define __BT_H__
 
 /*****************************************************************************
  * Include files
@@ -66,22 +66,48 @@ extern "C"
 
 /**
  ******************************************************************************
+ ** \defgroup BtGroup Base Timer (BT)
+  **
+ ******************************************************************************/
+//@{
+    
+/******************************************************************************/
+/* Global pre-processor symbols/macros ('#define')                            */
+/******************************************************************************/
+
+/******************************************************************************
+ * Global type definitions
+ ******************************************************************************/
+
+/**
+ ******************************************************************************
+ ** \brief 定时器选择数据类型重定义
+ *****************************************************************************/
+typedef enum en_bt_unit
+{
+    TIM0    = 0u,           ///< Timer 0
+    TIM1    = 1u,           ///< Timer 1
+    TIM2    = 2u,           ///< Timer 2
+}en_bt_unit_t;
+
+/**
+ ******************************************************************************
  ** \brief 极性控制数据类型重定义 (GATE_P)
  *****************************************************************************/
 typedef enum en_bt_gatep
 {
-    BtGateEnabledHigh = 0u,            // Triggered by high voltage level
-    BtGateEnabledLow  = 1u,            // Triggered by low voltage level
+    BtPositive = 0u,            ///< 高电平有效
+    BtOpposite = 1u,            ///< 低电平有效
 }en_bt_gatep_t;
 
 /**
  ******************************************************************************
- ** \brief Timer Gate Control (GATE)
+ ** \brief 定时器门控数据类型重定义 (GATE)
  *****************************************************************************/
 typedef enum en_bt_gate
 {
-    BtGateDisable = 0u,            // Gate control is off
-    BtGateEnable  = 1u,            // Gate control is on, timer runs when TR=1 and gate is triggered
+    BtGateDisable = 0u,            ///< 无门控
+    BtGateEnable  = 1u,            ///< 门控使能
 }en_bt_gate_t;
 
 /**
@@ -102,33 +128,44 @@ typedef enum en_bt_timclkdiv
 
 /**
  ******************************************************************************
- ** \brief Reverse output (TOG_EN)
+ ** \brief 翻转输出使能数据类型重定义 (TOG_EN)
  *****************************************************************************/
 typedef enum en_bt_toggle
 {
-    BtTogDisable = 0u,            // TOG,TOGN output same level
-    BtTogEnable  = 1u,            // TOG,TOGN output reversed level
+    BtTogDisable = 0u,            ///< 翻转输出禁止
+    BtTogEnable  = 1u,            ///< 翻转输出使能
 }en_bt_toggle_t;
 
 /**
  ******************************************************************************
- ** \brief Timer or counter function (CT)
+ ** \brief 计数/定时器功能选择数据类型重定义 (CT)
  *****************************************************************************/
 typedef enum en_bt_function
 {
-    BtTimer   = 0u,            // Timer function
-    BtCounter = 1u,            // Counter function
+    BtTimer   = 0u,            ///< 定时器功能
+    BtCounter = 1u,            ///< 计数器功能
 }en_bt_function_t;
+
 
 /**
  ******************************************************************************
- ** \brief Timer Mode(MD)
+ ** \brief 定时器工作模式数据类型重定义 (MD)
  *****************************************************************************/
 typedef enum en_bt_mode
 {
-    BtMode1  = 0u,         // 32-bit timer/counter, restart from 0 when overflow
-    BtMode2  = 1u,         // 16-bit auto-reload timer/counter
+    BtMode1  = 0u,         ///< 32位计数器/定时器
+    BtMode2  = 1u,         ///< 自动重装载16位计数器/定时器
 }en_bt_mode_t;
+
+/**
+ ******************************************************************************
+ ** \brief 定时器运行控制数据类型重定义 (TR)
+ *****************************************************************************/
+typedef enum en_bt_start
+{
+    BtTRDisable = 0u,            ///< 停止
+    BtTREnable  = 1u,            ///< 运行
+}en_bt_start_t;
 
 /**
  ******************************************************************************
@@ -142,71 +179,53 @@ typedef struct stc_bt_config
     en_bt_toggle_t    enTog;            ///< 反转输出使能
     en_bt_function_t  enCT;             ///< 定时/计数功能选择
     en_bt_mode_t      enMD;             ///< 计数模式配置
+    
+    func_ptr_t        pfnTim0Cb;        ///< Timer0中断服务回调函数[void function(void)]
+    func_ptr_t        pfnTim1Cb;        ///< Timer1中断服务回调函数[void function(void)]
+    func_ptr_t        pfnTim2Cb;        ///< Timer2中断服务回调函数[void function(void)]
 }stc_bt_config_t;
 
-#define BASE_TIM0_GetIntFlag()          (M0P_BT0->IFR_f.TF)
-#define BASE_TIM1_GetIntFlag()          (M0P_BT1->IFR_f.TF)
-#define BASE_TIM2_GetIntFlag()          (M0P_BT2->IFR_f.TF)
 
-#define BASE_TIM0_ClearIntFlag()        (M0P_BT0->ICLR_f.TFC = 0)
-#define BASE_TIM1_ClearIntFlag()        (M0P_BT1->ICLR_f.TFC = 0)
-#define BASE_TIM2_ClearIntFlag()        (M0P_BT2->ICLR_f.TFC = 0)
-
-#define BASE_TIM0_EnableIrq()           (M0P_BT0->CR_f.IE = 1)
-#define BASE_TIM1_EnableIrq()           (M0P_BT1->CR_f.IE = 1)
-#define BASE_TIM2_EnableIrq()           (M0P_BT2->CR_f.IE = 1)
-
-#define BASE_TIM0_DisableIrq()          (M0P_BT0->CR_f.IE = 0)
-#define BASE_TIM1_DisableIrq()          (M0P_BT1->CR_f.IE = 0)
-#define BASE_TIM2_DisableIrq()          (M0P_BT2->CR_f.IE = 0)
-
-#define BASE_TIM0_SetARR(__U16_DATA__)  (M0P_BT0->ARR_f.ARR = __U16_DATA__)
-#define BASE_TIM1_SetARR(__U16_DATA__)  (M0P_BT1->ARR_f.ARR = __U16_DATA__)
-#define BASE_TIM2_SetARR(__U16_DATA__)  (M0P_BT2->ARR_f.ARR = __U16_DATA__)
-
-#define BASE_TIM0_GetARR()              (M0P_BT0->ARR_f.ARR)
-#define BASE_TIM1_GetARR()              (M0P_BT1->ARR_f.ARR)
-#define BASE_TIM2_GetARR()              (M0P_BT2->ARR_f.ARR)
-
-#define BASE_TIM0_SetCounter16(__U16_DATA__)    (M0P_BT0->CNT_f.CNT = __U16_DATA__)
-#define BASE_TIM1_SetCounter16(__U16_DATA__)    (M0P_BT1->CNT_f.CNT = __U16_DATA__)
-#define BASE_TIM2_SetCounter16(__U16_DATA__)    (M0P_BT2->CNT_f.CNT = __U16_DATA__)
-
-#define BASE_TIM0_GetCounter16()        (M0P_BT0->CNT_f.CNT)
-#define BASE_TIM1_GetCounter16()        (M0P_BT1->CNT_f.CNT)
-#define BASE_TIM2_GetCounter16()        (M0P_BT2->CNT_f.CNT)
-
-#define BASE_TIM0_SetCounter32(__U32_DATA__)    (M0P_BT0->CNT32_f.CNT32 = __U32_DATA__)
-#define BASE_TIM1_SetCounter32(__U32_DATA__)    (M0P_BT1->CNT32_f.CNT32 = __U32_DATA__)
-#define BASE_TIM2_SetCounter32(__U32_DATA__)    (M0P_BT2->CNT32_f.CNT32 = __U32_DATA__)
-
-#define BASE_TIM0_GetCounter32()        (M0P_BT0->CNT32_f.CNT32)
-#define BASE_TIM1_GetCounter32()        (M0P_BT1->CNT32_f.CNT32)
-#define BASE_TIM2_GetCounter32()        (M0P_BT2->CNT32_f.CNT32)
-
-#define BASE_TIM0_SetFunction(__FUNC__) (M0P_BT0->CR_f.TR = __FUNC__)
-#define BASE_TIM1_SetFunction(__FUNC__) (M0P_BT1->CR_f.TR = __FUNC__)
-#define BASE_TIM2_SetFunction(__FUNC__) (M0P_BT2->CR_f.TR = __FUNC__)
-#define BASE_TIM0_SetMode(__MODE__)     (M0P_BT0->CR_f.MD = __MODE__)
-#define BASE_TIM1_SetMode(__MODE__)     (M0P_BT1->CR_f.MD = __MODE__)
-#define BASE_TIM2_SetMode(__MODE__)     (M0P_BT2->CR_f.MD = __MODE__)
-#define BASE_TIM0_Run()                 (M0P_BT0->CR_f.TR = 1)
-#define BASE_TIM1_Run()                 (M0P_BT1->CR_f.TR = 1)
-#define BASE_TIM2_Run()                 (M0P_BT2->CR_f.TR = 1)
-#define BASE_TIM0_Stop()                (M0P_BT0->CR_f.TR = 0)
-#define BASE_TIM1_Stop()                (M0P_BT1->CR_f.TR = 0)
-#define BASE_TIM2_Stop()                (M0P_BT2->CR_f.TR = 0)
+/******************************************************************************
+ * Global variable declarations ('extern', definition in C source)
+ *****************************************************************************/
 
 /******************************************************************************
  * Global function prototypes (definition in C source)
  *****************************************************************************/
-void BaseTim0_Init(stc_bt_config_t* baseTimerConfig);
-void BaseTim1_Init(stc_bt_config_t* baseTimerConfig);
-void BaseTim2_Init(stc_bt_config_t* baseTimerConfig);
+//中断相关函数 
+//中断标志获取
+boolean_t Bt_GetIntFlag(en_bt_unit_t enUnit);
+//中断标志清除
+en_result_t Bt_ClearIntFlag(en_bt_unit_t enUnit);
+//中断使能/禁止
+en_result_t Bt_EnableIrq (en_bt_unit_t enUnit);
+en_result_t Bt_DisableIrq(en_bt_unit_t enUnit);
+
+//初始化及相关功能操作
+//timer配置及初始化
+en_result_t Bt_Init(en_bt_unit_t enUnit, stc_bt_config_t* pstcConfig);
+//Lptimer 启动/停止
+en_result_t Bt_Run(en_bt_unit_t enUnit);
+en_result_t Bt_Stop(en_bt_unit_t enUnit);
+//重载值设置
+en_result_t Bt_ARRSet(en_bt_unit_t enUnit, uint16_t u16Data);
+//16位计数值设置/获取
+en_result_t Bt_Cnt16Set(en_bt_unit_t enUnit, uint16_t u16Data);
+uint16_t Bt_Cnt16Get(en_bt_unit_t enUnit);
+//32位计数值设置/获取
+en_result_t Bt_Cnt32Set(en_bt_unit_t enUnit, uint32_t u32Data);
+uint32_t Bt_Cnt32Get(en_bt_unit_t enUnit); 
+
+//@} // BtGroup
 
 #ifdef __cplusplus
-}
 #endif
 
 
-#endif /* __BASE_TIMER_H__ */
+#endif /* __BT_H__ */
+/******************************************************************************
+ * EOF (not truncated)
+ *****************************************************************************/
+
+
