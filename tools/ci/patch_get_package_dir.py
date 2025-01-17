@@ -3,7 +3,7 @@
 # by the hc32l1xx build system...
 #
 # this script is a workaround, patching the 'get_package_dir' method to return the directory
-# defined by 'board_build.ddl_package_dir' (relative to $PROJECT_DIR) for the 'framework-hc32f46x-ddl' package.
+# defined by 'board_build.ddl_package_dir' (relative to $PROJECT_DIR) for the 'framework-hc32l1xx-ddl' package.
 from SCons.Script import DefaultEnvironment
 from os.path import abspath, join
 
