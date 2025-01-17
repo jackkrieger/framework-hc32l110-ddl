@@ -197,17 +197,20 @@ extra_link_flags = get_manifest_list("build.flags.link")
 # as such, i'm adding them to all the other flags manually, which is kinda hacky, but seems to work just fine
 common_gcc_flags = [
     f"-mcpu={board.get('build.cpu')}",
+
 	"-mthumb",
-	"-mthumb-interwork",
-	"-Os",
-	"-fmessage-length=0",
-	"-fsigned-char",
+    "-mcpu=cortex-m0plus",
+    "-fno-common",
+
+	"-Wall",
 	"-ffunction-sections",
 	"-fdata-sections",
-	"-Wall",
+
+    # "-Og",
+    # "-std=c99",
 
     # compile with full debug symbols if debug build
-    "-g3" if is_debug_build else "",
+    "-gdwarf-3" if is_debug_build else "",
 ] + extra_common_gcc_flags
 
 # build flags for all languages
@@ -235,6 +238,9 @@ env.Append(
         #"-Wl,--print-memory-usage",
         "--specs=nano.specs",
         "--specs=nosys.specs",
+        "-static",
+        "-lc",
+        "-lm",
         "-Wl,--gc-sections,--relax",
         "-Wl,--check-sections",
         "-Wl,--unresolved-symbols=report-all",
@@ -246,10 +252,7 @@ env.Append(
     CPPDEFINES=[
         "HC32L110",
         "USE_DEVICE_DRIVER_LIB",
-        "__TARGET_FPU_VFP",
-	    "__FPU_PRESENT=1",
-	    "_MPU_PRESENT=1",
-	    "ARM_MATH_CM4",
+	    "ARM_MATH_CM0",
 	    "ARM_MATH_MATRIX_CHECK",
 	    "ARM_MATH_ROUNDING",
         ('__SOURCE_FILE_NAME__', '\\"${SOURCE.file}\\"') # add the source file name to the defines, so it can be used in the code
@@ -259,10 +262,8 @@ env.Append(
     # all directories in core/ddl are added to the include path
     CPPPATH=[
         DDL_DIR,
-        join(DDL_DIR, "addon"),
         join(DDL_DIR, "cmsis"),
         join(DDL_DIR, "common"),
-        join(DDL_DIR, "compat"),
         join(DDL_DIR, "library", "inc"),
         join(DDL_DIR, "startup"),
     ]
