@@ -1,6 +1,6 @@
 {
-  "name": "framework-hc32l1xx-ddl",
-  "description": "HC32L1xx Device Driver Library",
-  "url": "https://github.com/jackkrieger/framework-hc32l1xx-ddl.git#hc32l1xx-support",
+  "name": "framework-hc32l110-ddl",
+  "description": "HC32L110 Device Driver Library",
+  "url": "https://github.com/jackkrieger/framework-hc32l110-ddl.git",
   "version": "0.1.0"
 }

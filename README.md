@@ -1,17 +1,5 @@
 # PlatformIO support for HUADA HC32L110 DDL
 
-<p align="center">
-    <a href="" alt="Version">
-        <img src="https://img.shields.io/github/package-json/v/shadow578/framework-hc32f46x-ddl" />
-    </a>
-    <a href="https://github.com/shadow578/framework-hc32f46x-ddl/pulse" alt="Activity">
-        <img src="https://img.shields.io/github/commit-activity/m/shadow578/framework-hc32f46x-ddl" />
-    </a>
-    <a href="https://github.com/shadow578/framework-hc32f46x-ddl/actions/workflows/ci.yaml">
-        <img src="https://github.com/shadow578/framework-hc32f46x-ddl/actions/workflows/ci.yaml/badge.svg?branch=main" alt="ci status">
-    </a>
-</p>
-
 This repository contains the [HUADA HC32L110 DDL](https://www.hdsc.com.cn), adapted to work with [PlatformIO](https://platformio.org/).
 
 
@@ -21,7 +9,7 @@ to get started using the HC32L110 DDL, use the following in your `platformio.ini
 
 ```ini
 [env:my_env]
-platform = https://github.com/jackkrieger/platform-hc32l1xx.git
+platform = https://github.com/jackkrieger/platform-hc32l110.git
 framework = ddl
 board = generic_hc32l110x4
 ```
