@@ -12,7 +12,7 @@ platform = env.PioPlatform()
 original_get_package_dir = platform.get_package_dir
 
 def get_package_dir_override(name):
-    if name == "framework-hc32l1xx-ddl":
+    if name == "framework-hc32l110-ddl":
         project_dir = env.subst("$PROJECT_DIR")
         ddl_package_dir = env.BoardConfig().get("build.ddl_package_dir", "")
         if ddl_package_dir == "":

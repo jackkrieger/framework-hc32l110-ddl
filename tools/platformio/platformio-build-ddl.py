@@ -19,7 +19,7 @@ board = env.BoardConfig()
 is_debug_build = "debug" in env.GetBuildType()
 
 # ensure framework is installed correctly
-FRAMEWORK_DIR = platform.get_package_dir("framework-hc32l1xx-ddl")
+FRAMEWORK_DIR = platform.get_package_dir("framework-hc32l110-ddl")
 DDL_DIR = join(FRAMEWORK_DIR, "cores", "ddl")
 assert isdir(FRAMEWORK_DIR)
 assert isdir(DDL_DIR)
