@@ -78,7 +78,7 @@ def get_ld_args() -> dict:
 
     # get parameters from board manifest
     flash_start = board.get("upload.offset_address", 0)
-    flash_size = board.get("upload.maximum_size", 16384)
+    flash_size = board.get("upload.maximum_size", 32 * 1024)
     boot_mode = board.get("build.boot_mode", "primary")
 
     # parse flash start (hex, convert to int)
